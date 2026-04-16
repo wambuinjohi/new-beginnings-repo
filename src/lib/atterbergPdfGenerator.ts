@@ -1,5 +1,4 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import type {
   AtterbergProjectState,
   AtterbergRecord,
@@ -54,6 +53,108 @@ const num = (v: string | undefined): number | null => {
 const round2 = (n: number) => Math.round(n * 100) / 100;
 const fmt = (v: number | string | null | undefined): string =>
   v === null || v === undefined ? "-" : typeof v === "number" ? String(round2(v)) : v;
+
+// ── Table drawing helper ──
+interface TableConfig {
+  doc: jsPDF;
+  x: number;
+  y: number;
+  width: number;
+  colWidths: number[]; // Proportional column widths
+  rowHeight: number;
+  headers: string[];
+  rows: string[][];
+  isPLSection?: boolean;
+  plTrialStartIndex?: number;
+  plTrialEndIndex?: number;
+}
+
+function drawTable(config: TableConfig): number {
+  const { doc, x, y, width, colWidths, rowHeight, headers, rows, isPLSection = false, plTrialStartIndex = -1, plTrialEndIndex = -1 } = config;
+
+  let currentY = y;
+  const headerBgColor = COLORS.headerBg;
+  const plHeaderColor = [255, 235, 153] as [number, number, number];
+  const moistureRowColor = [235, 242, 250] as [number, number, number];
+
+  // Normalize column widths to actual pixel widths
+  const totalProportional = colWidths.reduce((a, b) => a + b, 0);
+  const actualColWidths = colWidths.map((w) => (w / totalProportional) * width);
+
+  // Draw header row
+  let currentX = x;
+  doc.setDrawColor(...COLORS.border);
+  doc.setLineWidth(0.3);
+  for (let i = 0; i < headers.length; i++) {
+    const colW = actualColWidths[i];
+
+    // Determine header background color
+    let headerColor = headerBgColor;
+    if (i > 0 && i >= plTrialStartIndex && i <= plTrialEndIndex) {
+      headerColor = plHeaderColor;
+    }
+
+    doc.setFillColor(...headerColor);
+    doc.rect(currentX, currentY, colW, rowHeight, "FD");
+
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...COLORS.dark);
+
+    const headerText = headers[i];
+    doc.text(headerText, currentX + colW / 2, currentY + rowHeight / 2 + 1, {
+      align: "center",
+      baseline: "middle",
+    });
+    currentX += colW;
+  }
+  currentY += rowHeight;
+
+  // Draw data rows
+  for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+    const row = rows[rowIdx];
+    currentX = x;
+
+    const isMoistureRow = rowIdx === rows.length - 1; // Last row is moisture content
+
+    for (let cellIdx = 0; cellIdx < row.length; cellIdx++) {
+      const colW = actualColWidths[cellIdx];
+      const cellText = row[cellIdx];
+
+      // Determine cell background color
+      let bgColor = [255, 255, 255] as [number, number, number];
+      if (isMoistureRow) {
+        bgColor = moistureRowColor;
+      }
+      if (cellIdx > 0 && cellIdx >= plTrialStartIndex && cellIdx <= plTrialEndIndex) {
+        bgColor = plHeaderColor;
+      }
+
+      doc.setFillColor(...bgColor);
+      doc.setDrawColor(...COLORS.border);
+      doc.setLineWidth(0.3);
+      doc.rect(currentX, currentY, colW, rowHeight, "FD");
+
+      // Draw cell text
+      doc.setFontSize(6.5);
+      const isBold = cellIdx === 0 || isMoistureRow;
+      doc.setFont("helvetica", isBold ? "bold" : "normal");
+      doc.setTextColor(...COLORS.dark);
+
+      const textX = cellIdx === 0 ? currentX + 1 : currentX + colW / 2;
+      const align = cellIdx === 0 ? "left" : "center";
+      doc.text(cellText, textX, currentY + rowHeight / 2 + 1, {
+        align: align as "left" | "center" | "right",
+        baseline: "middle",
+      });
+
+      currentX += colW;
+    }
+    currentY += rowHeight;
+  }
+
+  return currentY;
+}
 
 // ── Draw the cone penetration / moisture graph (BS 1377 style) with logarithmic scaling ──
 function drawConeGraph(
@@ -335,7 +436,15 @@ function drawRecordPage(
     "Moisture Content (%)",
   ];
 
-  const trialsPerTable = 6; // Trials to show per table
+  const trialsPerTable = 5; // Trials to show per table (matching Excel's 5 per row)
+
+  // Excel column proportions: B(15), C(6), D(6), E(12), F(12), G(12), H(12), I(12), J(12), K(12)
+  // For the table: Label(15), Trial 1(6), Trial 2(6), Trial 3(12), Trial 4(12), Trial 5(12)
+  // We'll adjust proportions to match: Label(15), Trial Data(6), Trial Data(6), Trial Data(12), Trial Data(12), Trial Data(12)
+  const labelColWidth = 15;
+  const penetrationColWidth = 6;
+  const smallTrialColWidth = 6;
+  const trialsPerRowToShow = 5; // For column width calculation
 
   // Create tables for LL trials
   let tableCount = 0;
@@ -346,9 +455,20 @@ function drawRecordPage(
     const trialsInThisTable = llTrials.slice(startIdx, endIdx);
 
     // Check if we need a page break
-    if (tableCount > 0 && y > ph - 80) {
+    if (tableCount > 0 && y > ph - 85) {
       doc.addPage();
       y = 20;
+    }
+
+    // Add section header before table
+    if (tableCount === 0) {
+      doc.setFillColor(...COLORS.headerBg);
+      doc.rect(margin, y, contentW, 7, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.primary);
+      doc.text("LIQUID LIMIT TEST", margin + 2, y + 5);
+      y += 9;
     }
 
     // Determine if PL trials can fit in first table
@@ -359,12 +479,28 @@ function drawRecordPage(
       plTrialsAlreadyShown = plTrialsToShow.length;
     }
 
-    // Table header
+    // Build table headers
     const colHeaders = [""];
-    for (let i = 0; i < trialsInThisTable.length; i++) colHeaders.push(`LL ${startIdx + i + 1}`);
-    for (let i = 0; i < plTrialsToShow.length; i++) colHeaders.push(`PL ${i + 1}`);
+    const colWidths = [labelColWidth];
 
-    const dataRows: string[][] = dataLabels.map((label, i) => {
+    // LL trial headers
+    for (let i = 0; i < trialsInThisTable.length; i++) {
+      const trial = trialsInThisTable[i];
+      const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
+      colHeaders.push(`Trial ${startIdx + i + 1}${containerInfo}`);
+      colWidths.push(smallTrialColWidth);
+    }
+
+    // PL trial headers
+    for (let i = 0; i < plTrialsToShow.length; i++) {
+      const trial = plTrialsToShow[i];
+      const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
+      colHeaders.push(`PL Trial ${i + 1}${containerInfo}`);
+      colWidths.push(smallTrialColWidth);
+    }
+
+    // Build data rows
+    const dataRows: string[][] = dataLabels.map((label, rowIdx) => {
       const row = [label];
 
       // LL trials data
@@ -372,7 +508,7 @@ function drawRecordPage(
         const wet = num(trial.containerWetMass);
         const dry = num(trial.containerDryMass);
         const cont = num(trial.containerMass);
-        switch (i) {
+        switch (rowIdx) {
           case 0: row.push(trial.containerNo || "-"); break;
           case 1: row.push(fmt(num(trial.penetration))); break;
           case 2: row.push(fmt(wet)); break;
@@ -408,7 +544,7 @@ function drawRecordPage(
           wetCalc = round2(dry + waterMass);
         }
 
-        switch (i) {
+        switch (rowIdx) {
           case 0: row.push(trial.containerNo || "-"); break;
           case 1: row.push("-"); break;
           case 2: row.push(fmt(wetCalc ?? (wet !== null ? wet : null))); break;
@@ -423,43 +559,24 @@ function drawRecordPage(
       return row;
     });
 
-    autoTable(doc, {
-      startY: y,
-      head: [colHeaders],
-      body: dataRows,
-      theme: "grid",
-      headStyles: {
-        fillColor: COLORS.headerBg,
-        textColor: COLORS.dark,
-        fontStyle: "bold",
-        fontSize: 6.5,
-        cellPadding: 1.5,
-        halign: "center",
-      },
-      bodyStyles: { fontSize: 7, cellPadding: 1.5, halign: "center" },
-      columnStyles: {
-        0: { cellWidth: 36, halign: "left", fontStyle: "bold", fontSize: 7 },
-      },
-      alternateRowStyles: { fillColor: COLORS.lightBg },
-      margin: { left: margin, right: margin },
-      styles: { overflow: "linebreak" as const, lineColor: COLORS.border, lineWidth: 0.3 },
-      didParseCell: (data: any) => {
-        // Bold moisture % row for all trials
-        if (data.section === "body" && data.row.index === 7) {
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [235, 242, 250];
-        }
-        // Light yellow fill for PL trial columns
-        if (data.section === "head" || data.section === "body") {
-          const colIdx = data.column.index;
-          if (colIdx > trialsInThisTable.length && colIdx <= trialsInThisTable.length + plTrialsToShow.length) {
-            data.cell.styles.fillColor = [255, 235, 153]; // Light yellow for PL
-          }
-        }
-      },
+    // Draw the table manually
+    const plStartIdx = trialsInThisTable.length + 1;
+    const plEndIdx = plStartIdx + plTrialsToShow.length - 1;
+
+    y = drawTable({
+      doc,
+      x: margin,
+      y: y,
+      width: contentW,
+      colWidths,
+      rowHeight: 6,
+      headers: colHeaders,
+      rows: dataRows,
+      plTrialStartIndex: plTrialsToShow.length > 0 ? plStartIdx : -1,
+      plTrialEndIndex: plTrialsToShow.length > 0 ? plEndIdx : -1,
     });
 
-    y = (doc as any).lastAutoTable.finalY + 2;
+    y += 3;
     tableCount++;
   }
 
@@ -469,22 +586,49 @@ function drawRecordPage(
     const trialsInThisTable = plTrials.slice(startIdx, endIdx);
 
     // Check if we need a page break
-    if (y > ph - 80) {
+    if (y > ph - 85) {
       doc.addPage();
       y = 20;
     }
 
-    // Table header
-    const colHeaders = [""];
-    for (let i = 0; i < trialsInThisTable.length; i++) colHeaders.push(`PL ${startIdx + i + 1}`);
+    // Add section header
+    if (startIdx === plTrialsAlreadyShown && plTrialsAlreadyShown > 0) {
+      doc.setFillColor(...COLORS.headerBg);
+      doc.rect(margin, y, contentW, 7, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.primary);
+      doc.text("PLASTIC LIMIT TEST (Continued)", margin + 2, y + 5);
+      y += 9;
+    } else if (startIdx === 0 && plTrialsAlreadyShown === 0 && plTrials.length > 0) {
+      doc.setFillColor(...COLORS.headerBg);
+      doc.rect(margin, y, contentW, 7, "F");
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...COLORS.primary);
+      doc.text("PLASTIC LIMIT TEST", margin + 2, y + 5);
+      y += 9;
+    }
 
-    const dataRows: string[][] = dataLabels.map((label, i) => {
+    // Build table headers for PL
+    const colHeaders = [""];
+    const colWidths = [labelColWidth];
+
+    for (let i = 0; i < trialsInThisTable.length; i++) {
+      const trial = trialsInThisTable[i];
+      const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
+      colHeaders.push(`Trial ${startIdx + i + 1}${containerInfo}`);
+      colWidths.push(smallTrialColWidth);
+    }
+
+    // Build data rows for PL
+    const dataRows: string[][] = dataLabels.map((label, rowIdx) => {
       const row = [label];
       for (const trial of trialsInThisTable) {
         const wet = num(trial.containerWetMass);
         const dry = num(trial.containerDryMass);
         const cont = num(trial.containerMass);
-        switch (i) {
+        switch (rowIdx) {
           case 0: row.push(trial.containerNo || "-"); break;
           case 1: row.push("-"); break;
           case 2: row.push(fmt(wet)); break;
@@ -502,35 +646,22 @@ function drawRecordPage(
       return row;
     });
 
-    autoTable(doc, {
-      startY: y,
-      head: [colHeaders],
-      body: dataRows,
-      theme: "grid",
-      headStyles: {
-        fillColor: COLORS.headerBg,
-        textColor: COLORS.dark,
-        fontStyle: "bold",
-        fontSize: 6.5,
-        cellPadding: 1.5,
-        halign: "center",
-      },
-      bodyStyles: { fontSize: 7, cellPadding: 1.5, halign: "center" },
-      columnStyles: {
-        0: { cellWidth: 36, halign: "left", fontStyle: "bold", fontSize: 7 },
-      },
-      alternateRowStyles: { fillColor: COLORS.lightBg },
-      margin: { left: margin, right: margin },
-      styles: { overflow: "linebreak" as const, lineColor: COLORS.border, lineWidth: 0.3 },
-      didParseCell: (data: any) => {
-        if (data.section === "body" && data.row.index === 7) {
-          data.cell.styles.fontStyle = "bold";
-          data.cell.styles.fillColor = [235, 242, 250];
-        }
-      },
+    // Draw the PL table (all columns are PL)
+    y = drawTable({
+      doc,
+      x: margin,
+      y: y,
+      width: contentW,
+      colWidths,
+      rowHeight: 6,
+      headers: colHeaders,
+      rows: dataRows,
+      isPLSection: true,
+      plTrialStartIndex: 1,
+      plTrialEndIndex: trialsInThisTable.length,
     });
 
-    y = (doc as any).lastAutoTable.finalY + 2;
+    y += 3;
   }
 
   // ── Plastic Limit result row ──
