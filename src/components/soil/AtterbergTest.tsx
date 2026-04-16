@@ -383,16 +383,31 @@ const getAtterbergLookup = (projectName: string, clientName: string, projectDate
   projectDate: normalizeLookupValue(projectDate),
 });
 
+const getLookupCacheKey = (lookup: AtterbergProjectLookup, projectId?: number | null) =>
+  JSON.stringify({
+    projectId: projectId ?? null,
+    ...lookup,
+  });
+
 const hasLookupCriteria = (lookup: AtterbergProjectLookup) => lookup.projectName !== "" || lookup.clientName !== "" || lookup.projectDate !== "";
 
 
-const loadAtterbergProjectFromApi = async (lookup: AtterbergProjectLookup) => {
+const loadAtterbergProjectFromApi = async (lookup: AtterbergProjectLookup, projectId?: number | null) => {
   try {
     // Increased limit from 1000 to 5000 to reduce chance of missing existing records
     const [projectsResponse, resultsResponse] = await Promise.all([
       listRecords<ApiProjectRow>("projects", { limit: 5000, orderBy: "updated_at", direction: "DESC" }),
       listRecords<ApiAtterbergResultRow>("test_results", { limit: 5000, orderBy: "updated_at", direction: "DESC" }),
     ]);
+
+    if (projectId) {
+      const resultRow = resultsResponse.data.find(
+        (row) => row.test_key === "atterberg" && Number(row.project_id) === projectId && row.payload_json,
+      );
+      if (resultRow) {
+        return normalizeAtterbergProjectState(extractAtterbergPayload(resultRow.payload_json));
+      }
+    }
 
     if (!hasLookupCriteria(lookup)) {
       const latestResult = resultsResponse.data.find((row) => row.test_key === "atterberg" && row.payload_json);
@@ -647,7 +662,7 @@ const AtterbergTest = () => {
   const [isExporting, setIsExporting] = useState<"json" | "pdf" | "xlsx" | null>(null);
   const saveStatusTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hydratedRef = useRef(false);
-  const loadAttemptedRef = useRef(false);
+  const lastLoadedLookupRef = useRef<string | null>(null);
   const skipNextPersistRef = useRef(false);
   const isSavingRef = useRef(false);
   const chartRefsMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -676,19 +691,23 @@ const AtterbergTest = () => {
 
   const persistedState = useMemo(() => buildPersistedState(computedRecords), [computedRecords]);
   const effectiveProjectLookup = useMemo(
-    () => getAtterbergLookup(project.projectName || projectState.projectName || "Atterberg Limits Testing", project.clientName || projectState.clientName, project.projectDate || project.date),
-    [project.clientName, project.date, project.projectDate, project.projectName, projectState.clientName, projectState.projectName],
+    () => getAtterbergLookup(project.projectName || projectState.projectName || "", project.clientName || projectState.clientName || "", project.projectDate || ""),
+    [project.clientName, project.projectDate, project.projectName, projectState.clientName, projectState.projectName],
+  );
+  const lookupCacheKey = useMemo(
+    () => getLookupCacheKey(effectiveProjectLookup, project.currentProjectId),
+    [effectiveProjectLookup, project.currentProjectId],
   );
 
   useEffect(() => {
-    if (loadAttemptedRef.current) return;
-    loadAttemptedRef.current = true;
+    if (lastLoadedLookupRef.current === lookupCacheKey) return;
+    lastLoadedLookupRef.current = lookupCacheKey;
 
     let cancelled = false;
 
     const restoreProject = async () => {
       try {
-        const remoteState = await loadAtterbergProjectFromApi(effectiveProjectLookup);
+        const remoteState = await loadAtterbergProjectFromApi(effectiveProjectLookup, project.currentProjectId);
         if (cancelled) return;
 
         if (remoteState) {
@@ -724,7 +743,7 @@ const AtterbergTest = () => {
     return () => {
       cancelled = true;
     };
-  }, [effectiveProjectLookup]);
+  }, [effectiveProjectLookup, lookupCacheKey, project.currentProjectId]);
 
   // Cleanup save status timeout on unmount
   useEffect(() => {
