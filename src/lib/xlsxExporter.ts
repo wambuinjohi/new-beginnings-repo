@@ -128,11 +128,11 @@ export const generateAtterbergXLSX = async (
         if (base64String && base64String.length > 0) {
           const logoId = wb.addImage({
             base64: base64String,
-            extension: "png",
+            extension: getImageExtension(images.logo),
           });
           ws.addImage(logoId, {
             tl: { col: 0, row: 0 }, // Top-left at A1
-            ext: { width: 80, height: 24 },
+            ext: { width: 200, height: 60 },
           });
           console.debug("[XLSX] Logo image added");
           imagesAddedCount++;
@@ -151,11 +151,11 @@ export const generateAtterbergXLSX = async (
         if (base64String && base64String.length > 0) {
           const contactsId = wb.addImage({
             base64: base64String,
-            extension: "png",
+            extension: getImageExtension(images.contacts),
           });
           ws.addImage(contactsId, {
-            tl: { col: 3, row: 0 }, // Top-right at D1
-            ext: { width: 80, height: 24 },
+            tl: { col: 5, row: 0 }, // Top-right at F1
+            ext: { width: 200, height: 60 },
           });
           console.debug("[XLSX] Contacts image added");
           imagesAddedCount++;
@@ -167,29 +167,9 @@ export const generateAtterbergXLSX = async (
       }
     }
 
-    // Add stamp image below logo
-    if (images.stamp) {
-      try {
-        console.debug(`[XLSX] Adding stamp image to worksheet for record: ${sheetName}`);
-        const base64String = extractBase64FromDataUrl(images.stamp);
-        if (base64String && base64String.length > 0) {
-          const stampId = wb.addImage({
-            base64: base64String,
-            extension: "png",
-          });
-          ws.addImage(stampId, {
-            tl: { col: 0, row: 6 }, // A7
-            ext: { width: 50, height: 24 },
-          });
-          console.debug("[XLSX] Stamp image added");
-          imagesAddedCount++;
-        } else {
-          console.debug("[XLSX] Stamp image not available, skipping");
-        }
-      } catch (error) {
-        console.debug("[XLSX] Could not add stamp image:", error instanceof Error ? error.message : error);
-      }
-    }
+    // Stamp image will be added near the footer "Checked by" section later
+    const stampBase64 = images.stamp ? extractBase64FromDataUrl(images.stamp) : null;
+    const stampExtension = images.stamp ? getImageExtension(images.stamp) : "png";
 
     if (imagesAddedCount > 0) {
       console.debug(`[XLSX] Sheet images complete: ${imagesAddedCount}/3 images added to ${sheetName}`);
