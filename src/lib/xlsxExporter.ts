@@ -729,6 +729,22 @@ export const generateAtterbergXLSX = async (
 
     classRow += 1;
     setCell(ws, classRow, 7, "AASHTO", dataBoldFont, null);
+    // Compute AASHTO classification
+    let aashtoCode = "";
+    if (liquidLimit !== null && plasticityIndex !== null && plasticityIndex !== undefined) {
+      const pi = plasticityIndex;
+      const ll = liquidLimit;
+      if (ll <= 40 && pi <= 10) {
+        aashtoCode = "A-4";
+      } else if (ll <= 40 && pi > 10) {
+        aashtoCode = "A-6";
+      } else if (ll > 40 && pi <= 10) {
+        aashtoCode = "A-5";
+      } else if (ll > 40 && pi > 10) {
+        aashtoCode = pi <= ll - 30 ? "A-7-5" : "A-7-6";
+      }
+    }
+    setCell(ws, classRow, 8, aashtoCode, dataBoldFont, null);
 
     // Footer
     const footerRow = classRow + 4;
@@ -739,8 +755,26 @@ export const generateAtterbergXLSX = async (
     setCell(ws, footerRow, 5, "Date reported", dataBoldFont, null);
     ws.mergeCells(`G${footerRow}:H${footerRow}`);
     setCell(ws, footerRow, 7, projectState.dateReported || "", valueFont, null);
-    ws.mergeCells(`I${footerRow}:K${footerRow}`);
-    setCell(ws, footerRow, 9, `Checked by: ${projectState.checkedBy || "____________"}`, dataBoldFont, null);
+    setCell(ws, footerRow, 9, "Checked by:", dataBoldFont, null);
+    setCell(ws, footerRow, 10, projectState.checkedBy || "____________", dataBoldFont, null);
+
+    // Add stamp image near "Checked by" in footer
+    if (stampBase64 && stampBase64.length > 0) {
+      try {
+        const stampId = wb.addImage({
+          base64: stampBase64,
+          extension: stampExtension,
+        });
+        ws.addImage(stampId, {
+          tl: { col: 8, row: footerRow - 2 },
+          ext: { width: 120, height: 50 },
+        });
+        console.debug("[XLSX] Stamp image added near footer");
+        imagesAddedCount++;
+      } catch (error) {
+        console.debug("[XLSX] Could not add stamp image:", error instanceof Error ? error.message : error);
+      }
+    }
 
 
 
