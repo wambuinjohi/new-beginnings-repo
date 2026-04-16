@@ -179,34 +179,50 @@ export const TestDataProvider = ({ children }: { children: ReactNode }) => {
           sort_order: number;
         }
 
-        const response = await listRecords<TestDefinitionRecord>("test_definitions", { limit: 1000 });
-        console.log("[TestData] Got response:", response);
+        // Set a short timeout to fail fast if API is not available
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("API request took too long - using default tests"));
+          }, 8000); // 8 second timeout
+        });
 
-        if (response?.data && Array.isArray(response.data)) {
-          const loadedTests: Record<string, TestSummary> = { ...defaultTests };
+        const responsePromise = listRecords<TestDefinitionRecord>("test_definitions", { limit: 1000 });
 
-          for (const record of response.data) {
-            const testKey = record.test_key;
-            if (testKey && loadedTests[testKey]) {
-              loadedTests[testKey] = {
-                ...loadedTests[testKey],
-                name: record.name || loadedTests[testKey].name,
-                category: record.category || loadedTests[testKey].category,
-                enabled: record.enabled !== false && record.enabled !== 0,
-                sortOrder: record.sort_order || 0,
-              };
+        try {
+          const response = await Promise.race([responsePromise, timeoutPromise]);
+
+          console.log("[TestData] Got response:", response);
+
+          if (response?.data && Array.isArray(response.data)) {
+            const loadedTests: Record<string, TestSummary> = { ...defaultTests };
+
+            for (const record of response.data) {
+              const testKey = record.test_key;
+              if (testKey && loadedTests[testKey]) {
+                loadedTests[testKey] = {
+                  ...loadedTests[testKey],
+                  name: record.name || loadedTests[testKey].name,
+                  category: record.category || loadedTests[testKey].category,
+                  enabled: record.enabled !== false && record.enabled !== 0,
+                  sortOrder: record.sort_order || 0,
+                };
+              }
             }
-          }
 
-          setTests(loadedTests);
-          console.log("[TestData] Successfully loaded test definitions from API");
+            setTests(loadedTests);
+            console.log("[TestData] Successfully loaded test definitions from API");
+          }
+        } catch (timeoutError) {
+          // Timeout or other error - just log and continue with defaults
+          console.warn("[TestData] API call timeout or error:", timeoutError instanceof Error ? timeoutError.message : "unknown error");
         }
       } catch (error) {
         console.warn("[TestData] Failed to load test definitions from API:", error instanceof Error ? error.message : error);
+        // Continue with default tests - this is not critical
       }
     };
 
-    // Load test definitions but don't block rendering
+    // Load test definitions in background - don't block rendering
     loadTestDefinitions();
   }, []);
 
