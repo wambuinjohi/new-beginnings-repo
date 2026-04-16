@@ -64,9 +64,17 @@ const extractBase64FromDataUrl = (dataUrl: string): string => {
     console.debug("Empty dataUrl passed to extractBase64FromDataUrl");
     return "";
   }
-  const match = dataUrl.match(/^data:image\/\w+;base64,(.+)$/);
+  const match = dataUrl.match(/^data:image\/[^;]+;base64,(.+)$/);
   const result = match ? match[1] : dataUrl;
   return result;
+};
+
+// Detect image extension from data URL
+const getImageExtension = (dataUrl: string): "png" | "jpeg" => {
+  const m = dataUrl.match(/^data:image\/([\w+]+);/);
+  if (!m) return "png";
+  const type = m[1].toLowerCase();
+  return type === "jpeg" || type === "jpg" ? "jpeg" : "png";
 };
 
 export const generateAtterbergXLSX = async (
@@ -120,11 +128,11 @@ export const generateAtterbergXLSX = async (
         if (base64String && base64String.length > 0) {
           const logoId = wb.addImage({
             base64: base64String,
-            extension: "png",
+            extension: getImageExtension(images.logo),
           });
           ws.addImage(logoId, {
             tl: { col: 0, row: 0 }, // Top-left at A1
-            ext: { width: 80, height: 24 },
+            ext: { width: 200, height: 60 },
           });
           console.debug("[XLSX] Logo image added");
           imagesAddedCount++;
@@ -143,11 +151,11 @@ export const generateAtterbergXLSX = async (
         if (base64String && base64String.length > 0) {
           const contactsId = wb.addImage({
             base64: base64String,
-            extension: "png",
+            extension: getImageExtension(images.contacts),
           });
           ws.addImage(contactsId, {
-            tl: { col: 3, row: 0 }, // Top-right at D1
-            ext: { width: 80, height: 24 },
+            tl: { col: 5, row: 0 }, // Top-right at F1
+            ext: { width: 200, height: 60 },
           });
           console.debug("[XLSX] Contacts image added");
           imagesAddedCount++;
@@ -159,29 +167,9 @@ export const generateAtterbergXLSX = async (
       }
     }
 
-    // Add stamp image below logo
-    if (images.stamp) {
-      try {
-        console.debug(`[XLSX] Adding stamp image to worksheet for record: ${sheetName}`);
-        const base64String = extractBase64FromDataUrl(images.stamp);
-        if (base64String && base64String.length > 0) {
-          const stampId = wb.addImage({
-            base64: base64String,
-            extension: "png",
-          });
-          ws.addImage(stampId, {
-            tl: { col: 0, row: 6 }, // A7
-            ext: { width: 50, height: 24 },
-          });
-          console.debug("[XLSX] Stamp image added");
-          imagesAddedCount++;
-        } else {
-          console.debug("[XLSX] Stamp image not available, skipping");
-        }
-      } catch (error) {
-        console.debug("[XLSX] Could not add stamp image:", error instanceof Error ? error.message : error);
-      }
-    }
+    // Stamp image will be added near the footer "Checked by" section later
+    const stampBase64 = images.stamp ? extractBase64FromDataUrl(images.stamp) : null;
+    const stampExtension = images.stamp ? getImageExtension(images.stamp) : "png";
 
     if (imagesAddedCount > 0) {
       console.debug(`[XLSX] Sheet images complete: ${imagesAddedCount}/3 images added to ${sheetName}`);
@@ -598,146 +586,7 @@ export const generateAtterbergXLSX = async (
       currentDataRow += dataLabels.length + 1;
     }
 
-    // Back-calculation section for Plastic Limit trials (using LL moisture content)
-    currentDataRow += 1;
-    ws.mergeCells(`B${currentDataRow}:K${currentDataRow}`);
-    const backCalcHeaderCell = ws.getCell(`B${currentDataRow}`);
-    backCalcHeaderCell.value = "PLASTIC LIMIT - BACK CALCULATION (Wet Soil from Dry Weight + Moisture%)";
-    backCalcHeaderCell.font = { ...headerFont, size: 10, color: { argb: "FF2962A3" } };
-    backCalcHeaderCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F4FF" } };
-    backCalcHeaderCell.border = allThin;
-    currentDataRow += 1;
-
-    // Get the first LL trial's moisture for PR trial back-calculation
-    const firstLLTrial = llTrials[0];
-    const llFirstMoisture = firstLLTrial ? getTrialMoisture(firstLLTrial) : null;
-
-    // Build back-calculation data rows
-    const backCalcLabels = [
-      "Wt of Dry Soil (g)",
-      "Moisture Content (%)",
-      "Wt of Moisture (g)",
-      "Wt of Wet Soil (g)",
-    ];
-
-    // Add trial header row for back-calculations
-    ws.mergeCells(`B${currentDataRow}:D${currentDataRow}`);
-    setCell(ws, currentDataRow, 2, "", dataFont, allThin);
-
-    // Show columns for PR and MG trials
-    const prTrialIdx = plTrials.findIndex((t) => t.containerNo === "PR");
-    const mgTrialIdx = plTrials.findIndex((t) => t.containerNo === "MG");
-
-    if (prTrialIdx >= 0 || mgTrialIdx >= 0) {
-      if (prTrialIdx >= 0) {
-        const prTrial = plTrials[prTrialIdx];
-        const headerCell = ws.getCell(currentDataRow, 5);
-        headerCell.value = `PR (${prTrial.containerNo || "PR"})`;
-        headerCell.font = { ...dataBoldFont, size: 10 };
-        headerCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F4FF" } };
-        headerCell.border = allThin;
-        headerCell.alignment = { horizontal: "center" };
-      }
-
-      if (mgTrialIdx >= 0) {
-        const mgTrial = plTrials[mgTrialIdx];
-        const headerCell = ws.getCell(currentDataRow, 6);
-        headerCell.value = `MG (${mgTrial.containerNo || "MG"})`;
-        headerCell.font = { ...dataBoldFont, size: 10 };
-        headerCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF0F4FF" } };
-        headerCell.border = allThin;
-        headerCell.alignment = { horizontal: "center" };
-      }
-
-      // Fill empty columns
-      for (let col = 7; col <= 11; col++) {
-        const headerCell = ws.getCell(currentDataRow, col);
-        headerCell.border = allThin;
-      }
-      currentDataRow += 1;
-
-      // Add back-calculation rows
-      for (let i = 0; i < backCalcLabels.length; i++) {
-        const row = currentDataRow + i;
-
-        ws.mergeCells(row, 2, row, 4);
-        setCell(ws, row, 2, backCalcLabels[i], dataBoldFont, allThin);
-
-        // PR Trial back-calculation
-        if (prTrialIdx >= 0) {
-          const prTrial = plTrials[prTrialIdx];
-          const dryMass = num(prTrial.containerDryMass) && num(prTrial.containerMass)
-            ? round2(num(prTrial.containerDryMass)! - num(prTrial.containerMass)!)
-            : null;
-
-          let value: string | number = "-";
-          switch (i) {
-            case 0: // Wt of Dry Soil
-              value = dryMass !== null ? dryMass : "-";
-              break;
-            case 1: // Moisture Content (from LL)
-              value = llFirstMoisture ? Number(llFirstMoisture) : "-";
-              break;
-            case 2: // Wt of Moisture (calculated)
-              if (dryMass !== null && llFirstMoisture) {
-                const mc = Number(llFirstMoisture);
-                value = round2((dryMass * mc) / 100);
-              }
-              break;
-            case 3: // Wt of Wet Soil (calculated)
-              if (dryMass !== null && llFirstMoisture) {
-                const mc = Number(llFirstMoisture);
-                const moisture = (dryMass * mc) / 100;
-                value = round2(dryMass + moisture);
-              }
-              break;
-          }
-          setCell(ws, row, 5, value, dataFont, allThin);
-        }
-
-        // MG Trial back-calculation
-        if (mgTrialIdx >= 0) {
-          const mgTrial = plTrials[mgTrialIdx];
-          const dryMass = num(mgTrial.containerDryMass) && num(mgTrial.containerMass)
-            ? round2(num(mgTrial.containerDryMass)! - num(mgTrial.containerMass)!)
-            : null;
-
-          // For MG, get moisture from its own trial calculation if available
-          const mgMoisture = getTrialMoisture(mgTrial);
-
-          let value: string | number = "-";
-          switch (i) {
-            case 0: // Wt of Dry Soil
-              value = dryMass !== null ? dryMass : "-";
-              break;
-            case 1: // Moisture Content (from MG trial or default)
-              value = mgMoisture ? Number(mgMoisture) : "-";
-              break;
-            case 2: // Wt of Moisture (calculated)
-              if (dryMass !== null && mgMoisture) {
-                const mc = Number(mgMoisture);
-                value = round2((dryMass * mc) / 100);
-              }
-              break;
-            case 3: // Wt of Wet Soil (calculated)
-              if (dryMass !== null && mgMoisture) {
-                const mc = Number(mgMoisture);
-                const moisture = (dryMass * mc) / 100;
-                value = round2(dryMass + moisture);
-              }
-              break;
-          }
-          setCell(ws, row, 6, value, dataFont, allThin);
-        }
-
-        // Fill remaining columns
-        for (let col = 7; col <= 11; col++) {
-          setCell(ws, row, col, "-", dataFont, allThin);
-        }
-      }
-
-      currentDataRow += backCalcLabels.length + 1;
-    }
+    // Back-calculation is done inline in the data table above — no separate section needed
 
     // Row for Plastic Limit result - recalculate if needed
     currentDataRow += 1;
@@ -880,6 +729,22 @@ export const generateAtterbergXLSX = async (
 
     classRow += 1;
     setCell(ws, classRow, 7, "AASHTO", dataBoldFont, null);
+    // Compute AASHTO classification
+    let aashtoCode = "";
+    if (liquidLimit !== null && plasticityIndex !== null && plasticityIndex !== undefined) {
+      const pi = plasticityIndex;
+      const ll = liquidLimit;
+      if (ll <= 40 && pi <= 10) {
+        aashtoCode = "A-4";
+      } else if (ll <= 40 && pi > 10) {
+        aashtoCode = "A-6";
+      } else if (ll > 40 && pi <= 10) {
+        aashtoCode = "A-5";
+      } else if (ll > 40 && pi > 10) {
+        aashtoCode = pi <= ll - 30 ? "A-7-5" : "A-7-6";
+      }
+    }
+    setCell(ws, classRow, 8, aashtoCode, dataBoldFont, null);
 
     // Footer
     const footerRow = classRow + 4;
@@ -890,8 +755,26 @@ export const generateAtterbergXLSX = async (
     setCell(ws, footerRow, 5, "Date reported", dataBoldFont, null);
     ws.mergeCells(`G${footerRow}:H${footerRow}`);
     setCell(ws, footerRow, 7, projectState.dateReported || "", valueFont, null);
-    ws.mergeCells(`I${footerRow}:K${footerRow}`);
-    setCell(ws, footerRow, 9, `Checked by: ${projectState.checkedBy || "____________"}`, dataBoldFont, null);
+    setCell(ws, footerRow, 9, "Checked by:", dataBoldFont, null);
+    setCell(ws, footerRow, 10, projectState.checkedBy || "____________", dataBoldFont, null);
+
+    // Add stamp image near "Checked by" in footer
+    if (stampBase64 && stampBase64.length > 0) {
+      try {
+        const stampId = wb.addImage({
+          base64: stampBase64,
+          extension: stampExtension,
+        });
+        ws.addImage(stampId, {
+          tl: { col: 8, row: footerRow - 2 },
+          ext: { width: 120, height: 50 },
+        });
+        console.debug("[XLSX] Stamp image added near footer");
+        imagesAddedCount++;
+      } catch (error) {
+        console.debug("[XLSX] Could not add stamp image:", error instanceof Error ? error.message : error);
+      }
+    }
 
 
 
