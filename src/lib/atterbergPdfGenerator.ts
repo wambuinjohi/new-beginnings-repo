@@ -841,9 +841,18 @@ export const generateAtterbergPDF = async (
   // Fetch images in parallel with PDF setup
   let images: Partial<Awaited<ReturnType<typeof fetchAdminImagesAsBase64>>> = {};
   try {
+    console.log("[PDF] Fetching admin images for export...");
     images = await fetchAdminImagesAsBase64();
+    console.log("[PDF] Admin images fetch result:", {
+      hasLogo: !!images.logo,
+      hasContacts: !!images.contacts,
+      hasStamp: !!images.stamp,
+      logoSize: images.logo ? images.logo.length : 0,
+      contactsSize: images.contacts ? images.contacts.length : 0,
+      stampSize: images.stamp ? images.stamp.length : 0,
+    });
   } catch (error) {
-    console.warn("Failed to fetch admin images for PDF, continuing without them:", error instanceof Error ? error.message : error);
+    console.warn("[PDF] Failed to fetch admin images for PDF, continuing without them:", error instanceof Error ? error.message : error);
     // Continue with empty images object - images are optional
   }
 

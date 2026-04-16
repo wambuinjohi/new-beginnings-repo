@@ -90,10 +90,26 @@ export const generateAtterbergXLSX = async (
   // Fetch admin images once for all records (with retry logic)
   let images: Partial<Awaited<ReturnType<typeof fetchAdminImagesAsBase64>>> = {};
   try {
+    console.log("[XLSX] Fetching admin images for export...");
     images = await fetchAdminImagesAsBase64();
+    console.log("[XLSX] Admin images fetch result:", {
+      hasLogo: !!images.logo,
+      hasContacts: !!images.contacts,
+      hasStamp: !!images.stamp,
+      logoSize: images.logo ? images.logo.length : 0,
+      contactsSize: images.contacts ? images.contacts.length : 0,
+      stampSize: images.stamp ? images.stamp.length : 0,
+    });
+
+    if (!images.logo && !images.contacts && !images.stamp) {
+      console.warn("[XLSX] ⚠️ No images found in database. To add images:");
+      console.warn("     1. Go to Admin > Media Library");
+      console.warn("     2. Upload Logo, Contacts, and Stamp images");
+      console.warn("     3. Export again to include them");
+    }
   } catch (error) {
     // Silently fail - images are optional
-    console.debug("[XLSX] Admin images not available for export:", error instanceof Error ? error.message : error);
+    console.debug("[XLSX] Error fetching admin images:", error instanceof Error ? error.message : error);
     // Continue with empty images object - images are optional
   }
 
