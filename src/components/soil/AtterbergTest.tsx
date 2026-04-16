@@ -392,13 +392,22 @@ const getLookupCacheKey = (lookup: AtterbergProjectLookup, projectId?: number | 
 const hasLookupCriteria = (lookup: AtterbergProjectLookup) => lookup.projectName !== "" || lookup.clientName !== "" || lookup.projectDate !== "";
 
 
-const loadAtterbergProjectFromApi = async (lookup: AtterbergProjectLookup) => {
+const loadAtterbergProjectFromApi = async (lookup: AtterbergProjectLookup, projectId?: number | null) => {
   try {
     // Increased limit from 1000 to 5000 to reduce chance of missing existing records
     const [projectsResponse, resultsResponse] = await Promise.all([
       listRecords<ApiProjectRow>("projects", { limit: 5000, orderBy: "updated_at", direction: "DESC" }),
       listRecords<ApiAtterbergResultRow>("test_results", { limit: 5000, orderBy: "updated_at", direction: "DESC" }),
     ]);
+
+    if (projectId) {
+      const resultRow = resultsResponse.data.find(
+        (row) => row.test_key === "atterberg" && Number(row.project_id) === projectId && row.payload_json,
+      );
+      if (resultRow) {
+        return normalizeAtterbergProjectState(extractAtterbergPayload(resultRow.payload_json));
+      }
+    }
 
     if (!hasLookupCriteria(lookup)) {
       const latestResult = resultsResponse.data.find((row) => row.test_key === "atterberg" && row.payload_json);
@@ -698,7 +707,7 @@ const AtterbergTest = () => {
 
     const restoreProject = async () => {
       try {
-        const remoteState = await loadAtterbergProjectFromApi(effectiveProjectLookup);
+        const remoteState = await loadAtterbergProjectFromApi(effectiveProjectLookup, project.currentProjectId);
         if (cancelled) return;
 
         if (remoteState) {
@@ -734,7 +743,7 @@ const AtterbergTest = () => {
     return () => {
       cancelled = true;
     };
-  }, [effectiveProjectLookup, lookupCacheKey]);
+  }, [effectiveProjectLookup, lookupCacheKey, project.currentProjectId]);
 
   // Cleanup save status timeout on unmount
   useEffect(() => {
