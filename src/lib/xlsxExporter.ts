@@ -64,9 +64,17 @@ const extractBase64FromDataUrl = (dataUrl: string): string => {
     console.debug("Empty dataUrl passed to extractBase64FromDataUrl");
     return "";
   }
-  const match = dataUrl.match(/^data:image\/\w+;base64,(.+)$/);
+  const match = dataUrl.match(/^data:image\/[^;]+;base64,(.+)$/);
   const result = match ? match[1] : dataUrl;
   return result;
+};
+
+// Detect image extension from data URL
+const getImageExtension = (dataUrl: string): "png" | "jpeg" => {
+  const m = dataUrl.match(/^data:image\/([\w+]+);/);
+  if (!m) return "png";
+  const type = m[1].toLowerCase();
+  return type === "jpeg" || type === "jpg" ? "jpeg" : "png";
 };
 
 export const generateAtterbergXLSX = async (
