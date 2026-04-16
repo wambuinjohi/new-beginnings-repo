@@ -1104,6 +1104,19 @@ const AtterbergTest = () => {
     setIsExporting("pdf");
     setIsPreviewLoading(true);
     try {
+      console.log(`[Export PDF] Starting PDF export for ${computedRecords.length} records`);
+
+      // Ensure all records are expanded (for chart visibility)
+      const recordIds = computedRecords.map((r) => r.id);
+      ensureRecordsExpanded(recordIds);
+
+      // Wait for all charts to be fully rendered before capturing
+      await waitForChartsToBeFullyRendered(recordIds);
+
+      // Capture all chart images to match Excel export
+      const chartImages = await captureAllChartImages(recordIds);
+      console.log(`[Export PDF] Captured ${Object.keys(chartImages).length} charts out of ${recordIds.length}`);
+
       const blob = await generateAtterbergPDF({
         projectName: project.projectName,
         clientName: project.clientName || projectState.clientName,
@@ -1111,6 +1124,7 @@ const AtterbergTest = () => {
         projectState,
         records: computedRecords,
         skipDownload: true,
+        chartImages: Object.keys(chartImages).length > 0 ? chartImages : undefined,
       });
 
       if (blob) {
@@ -1134,7 +1148,7 @@ const AtterbergTest = () => {
     }
 
     return true;
-  }, [computedRecords, project.clientName, project.date, project.projectName, projectState]);
+  }, [computedRecords, project.clientName, project.date, project.projectName, projectState, captureAllChartImages, ensureRecordsExpanded, waitForChartsToBeFullyRendered]);
 
 
   const handleRecordExportPDF = useCallback(
@@ -1145,17 +1159,25 @@ const AtterbergTest = () => {
         return false;
       }
 
+      // Expand the record and wait for chart to render
+      ensureRecordsExpanded([recordId]);
+      await waitForChartsToBeFullyRendered([recordId]);
+
+      // Capture the chart image for this record
+      const chartImages = await captureAllChartImages([recordId]);
+
       await generateAtterbergPDF({
         projectName: project.projectName,
         clientName: project.clientName || projectState.clientName,
         date: project.date,
         projectState,
         records: [record],
+        chartImages: Object.keys(chartImages).length > 0 ? chartImages : undefined,
       });
 
       return true;
     },
-    [computedRecords, project.clientName, project.date, project.projectName, projectState],
+    [computedRecords, project.clientName, project.date, project.projectName, projectState, captureAllChartImages, ensureRecordsExpanded, waitForChartsToBeFullyRendered],
   );
 
   const captureAllChartImages = useCallback(async (recordIds: string[], expandRecords?: (ids: string[]) => void): Promise<{ [key: string]: string }> => {

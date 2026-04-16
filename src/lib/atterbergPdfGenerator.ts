@@ -33,6 +33,7 @@ interface AtterbergPDFOptions {
   projectState: AtterbergProjectState;
   records: AtterbergRecord[];
   skipDownload?: boolean;
+  chartImages?: { [key: string]: string }; // recordId -> base64 image data URL
 }
 
 const COLORS = {
@@ -319,7 +320,7 @@ function drawRecordPage(
   options: AtterbergPDFOptions,
   images: AdminImages,
 ) {
-  const { projectName, clientName, projectState } = options;
+  const { projectName, clientName, projectState, chartImages } = options;
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   const margin = 14;
@@ -692,9 +693,23 @@ function drawRecordPage(
 
   const sectionStartY2 = y;
 
-  // ── LEFT: Cone Graph ──
+  // ── LEFT: Cone Graph (use captured image if available, else draw) ──
   const chartH = 50;
-  drawConeGraph(doc, llTrials, record.results.liquidLimit, margin, y, leftW, chartH);
+  const llChartImageKey = `${record.id}-liquidLimit`;
+  const hasChartImage = chartImages && chartImages[llChartImageKey];
+
+  if (hasChartImage) {
+    try {
+      const base64String = extractBase64FromDataUrl(hasChartImage);
+      doc.addImage(base64String, "PNG", margin, y, leftW, chartH);
+      console.log("Captured liquid limit chart image added successfully to PDF");
+    } catch (error) {
+      console.error("Failed to add captured chart image, falling back to drawing:", error instanceof Error ? error.message : error);
+      drawConeGraph(doc, llTrials, record.results.liquidLimit, margin, y, leftW, chartH);
+    }
+  } else {
+    drawConeGraph(doc, llTrials, record.results.liquidLimit, margin, y, leftW, chartH);
+  }
 
   // ── RIGHT: Linear Shrinkage ──
   let ry = sectionStartY2;
