@@ -36,12 +36,13 @@ interface AtterbergPDFOptions {
 }
 
 const COLORS = {
-  primary: [41, 98, 163] as [number, number, number],
+  primary: [41, 98, 163] as [number, number, number], // #2962A3
   dark: [30, 30, 30] as [number, number, number],
   muted: [120, 120, 120] as [number, number, number],
   border: [180, 180, 180] as [number, number, number],
   lightBg: [245, 247, 250] as [number, number, number],
-  headerBg: [220, 230, 245] as [number, number, number],
+  headerBg: [220, 230, 245] as [number, number, number], // #DCE6F5 (light blue from Excel)
+  plHighlight: [255, 235, 153] as [number, number, number], // #FFEB99 (light yellow from Excel)
 };
 
 const num = (v: string | undefined): number | null => {
@@ -74,8 +75,8 @@ function drawTable(config: TableConfig): number {
 
   let currentY = y;
   const headerBgColor = COLORS.headerBg;
-  const plHeaderColor = [255, 235, 153] as [number, number, number];
-  const moistureRowColor = [235, 242, 250] as [number, number, number];
+  const plHeaderColor = COLORS.plHighlight;
+  const moistureRowColor = COLORS.headerBg; // Light blue tint for moisture row like Excel
 
   // Normalize column widths to actual pixel widths
   const totalProportional = colWidths.reduce((a, b) => a + b, 0);
@@ -438,13 +439,13 @@ function drawRecordPage(
 
   const trialsPerTable = 5; // Trials to show per table (matching Excel's 5 per row)
 
-  // Excel column proportions: B(15), C(6), D(6), E(12), F(12), G(12), H(12), I(12), J(12), K(12)
-  // For the table: Label(15), Trial 1(6), Trial 2(6), Trial 3(12), Trial 4(12), Trial 5(12)
-  // We'll adjust proportions to match: Label(15), Trial Data(6), Trial Data(6), Trial Data(12), Trial Data(12), Trial Data(12)
-  const labelColWidth = 15;
-  const penetrationColWidth = 6;
-  const smallTrialColWidth = 6;
-  const trialsPerRowToShow = 5; // For column width calculation
+  // Helper function to get column width based on trial index
+  // Matches Excel's proportions: B(15), C(6), D(6), E(12), F(12), G(12)
+  const getColumnWidthForTrial = (trialIndex: number): number => {
+    if (trialIndex === 0) return 15; // Label column
+    if (trialIndex === 1 || trialIndex === 2) return 6; // First two trials: narrow
+    return 12; // Trials 3+: wide
+  };
 
   // Create tables for LL trials
   let tableCount = 0;
@@ -479,24 +480,25 @@ function drawRecordPage(
       plTrialsAlreadyShown = plTrialsToShow.length;
     }
 
-    // Build table headers
+    // Build table headers with Excel-style column widths
     const colHeaders = [""];
-    const colWidths = [labelColWidth];
+    const colWidths = [getColumnWidthForTrial(0)]; // Label column
 
-    // LL trial headers
+    // LL trial headers - assign proportional widths based on position
     for (let i = 0; i < trialsInThisTable.length; i++) {
       const trial = trialsInThisTable[i];
       const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
       colHeaders.push(`Trial ${startIdx + i + 1}${containerInfo}`);
-      colWidths.push(smallTrialColWidth);
+      colWidths.push(getColumnWidthForTrial(i + 1)); // i+1 because 0 is label column
     }
 
-    // PL trial headers
+    // PL trial headers - assign proportional widths based on position
     for (let i = 0; i < plTrialsToShow.length; i++) {
       const trial = plTrialsToShow[i];
       const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
       colHeaders.push(`PL Trial ${i + 1}${containerInfo}`);
-      colWidths.push(smallTrialColWidth);
+      const plTrialIndex = trialsInThisTable.length + i + 1;
+      colWidths.push(getColumnWidthForTrial(plTrialIndex));
     }
 
     // Build data rows
@@ -610,15 +612,15 @@ function drawRecordPage(
       y += 9;
     }
 
-    // Build table headers for PL
+    // Build table headers for PL with Excel-style column widths
     const colHeaders = [""];
-    const colWidths = [labelColWidth];
+    const colWidths = [getColumnWidthForTrial(0)]; // Label column
 
     for (let i = 0; i < trialsInThisTable.length; i++) {
       const trial = trialsInThisTable[i];
       const containerInfo = trial.containerNo ? ` (${trial.containerNo})` : "";
       colHeaders.push(`Trial ${startIdx + i + 1}${containerInfo}`);
-      colWidths.push(smallTrialColWidth);
+      colWidths.push(getColumnWidthForTrial(i + 1)); // i+1 because 0 is label column
     }
 
     // Build data rows for PL
