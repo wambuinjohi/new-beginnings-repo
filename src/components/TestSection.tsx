@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, FileDown, FlaskConical, Loader2, Save, Sheet, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import ProjectHeader from "@/components/ProjectHeader";
+import { useProject } from "@/context/ProjectContext";
 
 type SmokeCheckItemStatus = "idle" | "running" | "success" | "error";
 
@@ -32,6 +34,13 @@ interface TestSectionProps {
 
 const TestSection = ({ title, children, onSave, onFinalSave, onClear, onExportPDF, onExportXLSX, onExportSmokeCheck, exportSmokeCheckDisabled, smokeCheckStatus, saveStatus = "idle", lastSavedAt, lastSaveError }: TestSectionProps) => {
   const [open, setOpen] = useState(false);
+  const project = useProject();
+  const hasHeaderHandlers =
+    !!project.onProjectNameChange &&
+    !!project.onClientNameChange &&
+    !!project.onLoadProject &&
+    !!project.onStartNewProject &&
+    !!project.onMetadataChange;
 
   return (
     <Card className="shadow-sm">
@@ -233,7 +242,28 @@ const TestSection = ({ title, children, onSave, onFinalSave, onClear, onExportPD
           </div>
         )}
       </CardHeader>
-      {open && <CardContent className="px-4 pb-4 pt-0">{children}</CardContent>}
+      {open && (
+        <CardContent className="px-4 pb-4 pt-0 space-y-4">
+          {hasHeaderHandlers && (
+            <div className="rounded-md border bg-muted/20 p-4 print:hidden">
+              <ProjectHeader
+                projectName={project.projectName}
+                clientName={project.clientName}
+                date={project.date}
+                projectHistory={project.projectHistory ?? []}
+                isLoadingProjects={project.isLoadingProjects ?? false}
+                projectMetadata={project.projectMetadata ?? {}}
+                onProjectNameChange={project.onProjectNameChange!}
+                onClientNameChange={project.onClientNameChange!}
+                onLoadProject={project.onLoadProject!}
+                onStartNewProject={project.onStartNewProject!}
+                onMetadataChange={project.onMetadataChange!}
+              />
+            </div>
+          )}
+          {children}
+        </CardContent>
+      )}
     </Card>
   );
 };
