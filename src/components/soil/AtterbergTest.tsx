@@ -48,8 +48,11 @@ import {
   countRecordStartedDataPoints,
   deriveAtterbergStatus,
   getRecordValidationMessages,
+  isLiquidLimitTrialStarted,
   isLiquidLimitTrialValid,
+  isPlasticLimitTrialStarted,
   isPlasticLimitTrialValid,
+  isShrinkageLimitTrialStarted,
   isShrinkageLimitTrialValid,
 } from "@/lib/atterbergCalculations";
 import { useTestReport } from "@/hooks/useTestReport";
