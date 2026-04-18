@@ -121,20 +121,6 @@ const TestsView = ({ initialTab }: { initialTab?: string }) => {
 
   return (
     <div className="space-y-6">
-      <ProjectHeader
-        projectName={projectName}
-        clientName={clientName}
-        date={date}
-        projectHistory={projectHistory}
-        isLoadingProjects={isLoadingProjects}
-        projectMetadata={projectMetadata}
-        onProjectNameChange={onProjectNameChange}
-        onClientNameChange={onClientNameChange}
-        onLoadProject={onLoadProject}
-        onStartNewProject={onStartNewProject}
-        onMetadataChange={onMetadataChange}
-      />
-
       <Tabs defaultValue={initialTab || "soil"} className="w-full">
         <TabsList className="w-full grid grid-cols-4 mb-6 h-11">
           <TabsTrigger value="soil" className="gap-1.5 text-sm">
