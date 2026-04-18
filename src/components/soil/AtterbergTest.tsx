@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Download, Plus, Trash2, Upload, AlertTriangl
 import { toast } from "sonner";
 
 import TestSection from "@/components/TestSection";
+import ProjectHeader from "@/components/ProjectHeader";
 import AtterbergTestCard from "./AtterbergTestCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -48,8 +49,11 @@ import {
   countRecordStartedDataPoints,
   deriveAtterbergStatus,
   getRecordValidationMessages,
+  isLiquidLimitTrialStarted,
   isLiquidLimitTrialValid,
+  isPlasticLimitTrialStarted,
   isPlasticLimitTrialValid,
+  isShrinkageLimitTrialStarted,
   isShrinkageLimitTrialValid,
 } from "@/lib/atterbergCalculations";
 import { useTestReport } from "@/hooks/useTestReport";
@@ -241,131 +245,23 @@ const collapseAllOnLoad = (state: AtterbergProjectState): AtterbergProjectState 
   records: state.records.map((record) => ({
     ...record,
     isExpanded: false,
-    tests: record.tests.map((test) => ({ ...test, isExpanded: false })),
+    // Drop tests that have no started trials (clears pre-seeded defaults from old saved state)
+    tests: record.tests
+      .filter((test) => {
+        switch (test.type) {
+          case "liquidLimit":
+            return (test.trials as LiquidLimitTrial[]).some(isLiquidLimitTrialStarted);
+          case "plasticLimit":
+            return (test.trials as PlasticLimitTrial[]).some(isPlasticLimitTrialStarted);
+          case "shrinkageLimit":
+            return (test.trials as ShrinkageLimitTrial[]).some(isShrinkageLimitTrialStarted);
+          default:
+            return true;
+        }
+      })
+      .map((test) => ({ ...test, isExpanded: false })),
   })),
 });
-
-// Create default sample record with realistic test data for quick testing
-const createDefaultRecord = (index: number): AtterbergRecord => {
-  const recordId = makeId("record");
-
-  // Liquid Limit Test with 2 trials - realistic soil sample data
-  const liquidLimitTest: LiquidLimitTest = {
-    id: makeId("test"),
-    title: `Liquid Limit ${index + 1}`,
-    type: "liquidLimit",
-    isExpanded: false,
-    trials: [
-      {
-        id: makeId("trial"),
-        trialNo: "1",
-        penetration: "15",
-        containerNo: "101",
-        containerWetMass: "23.8",
-        containerDryMass: "17.6",
-        containerMass: "5.0",
-        moisture: "",
-      },
-      {
-        id: makeId("trial"),
-        trialNo: "2",
-        penetration: "18",
-        containerNo: "102",
-        containerWetMass: "25.1",
-        containerDryMass: "18.0",
-        containerMass: "5.1",
-        moisture: "",
-      },
-      {
-        id: makeId("trial"),
-        trialNo: "3",
-        penetration: "22",
-        containerNo: "103",
-        containerWetMass: "27.3",
-        containerDryMass: "18.8",
-        containerMass: "5.0",
-        moisture: "",
-      },
-      {
-        id: makeId("trial"),
-        trialNo: "4",
-        penetration: "27",
-        containerNo: "104",
-        containerWetMass: "29.8",
-        containerDryMass: "19.6",
-        containerMass: "5.2",
-        moisture: "",
-      },
-    ],
-    result: {},
-  };
-
-  // Plastic Limit Test with 2 trials
-  const plasticLimitTest: PlasticLimitTest = {
-    id: makeId("test"),
-    title: `Plastic Limit ${index + 1}`,
-    type: "plasticLimit",
-    isExpanded: false,
-    trials: [
-      {
-        id: makeId("trial"),
-        trialNo: "1",
-        containerNo: "201",
-        containerWetMass: "22.0",
-        containerDryMass: "16.5",
-        containerMass: "4.8",
-        moisture: "",
-      },
-      {
-        id: makeId("trial"),
-        trialNo: "2",
-        containerNo: "202",
-        containerWetMass: "23.4",
-        containerDryMass: "17.2",
-        containerMass: "4.9",
-        moisture: "",
-      },
-    ],
-    result: {},
-  };
-
-  // Shrinkage Limit Test with 2 trials
-  const shrinkageLimitTest: ShrinkageLimitTest = {
-    id: makeId("test"),
-    title: `Linear Shrinkage ${index + 1}`,
-    type: "shrinkageLimit",
-    isExpanded: false,
-    trials: [
-      {
-        id: makeId("trial"),
-        trialNo: "1",
-        initialLength: "140",
-        finalLength: "125",
-      },
-      {
-        id: makeId("trial"),
-        trialNo: "2",
-        initialLength: "140",
-        finalLength: "124",
-      },
-    ],
-    result: {},
-  };
-
-  return {
-    id: recordId,
-    title: `Record ${index + 1}`,
-    label: `Sample ${index + 1}`,
-    note: "Sample soil specimen",
-    isExpanded: false,
-    tests: [liquidLimitTest, plasticLimitTest, shrinkageLimitTest],
-    results: {},
-    sampleNumber: `00${index + 1}`,
-    dateSubmitted: new Date().toISOString().split("T")[0],
-    dateTested: new Date().toISOString().split("T")[0],
-    testedBy: "Lab Technician",
-  };
-};
 
 const buildPersistedState = (records: ComputedRecord[]): AtterbergProjectState => ({
   records: records.map(({ dataPoints, completedTests, ...record }) => record),
@@ -678,7 +574,7 @@ const AtterbergTest = () => {
   const project = useProject();
   // Initialize with empty records if no project selected, otherwise with one empty record
   const [projectState, setProjectState] = useState<AtterbergProjectState>({
-    records: project.currentProjectId ? [createRecord(0)] : [],
+    records: [],
   });
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [smokeCheckStatus, setSmokeCheckStatus] = useState<SmokeCheckStatus | null>(null);
@@ -799,35 +695,6 @@ const AtterbergTest = () => {
     };
   }, []);
 
-  // Initialize with one empty record when a project is selected (for new projects with no data)
-  useEffect(() => {
-    if (!project.currentProjectId) {
-      // No project selected yet
-      return;
-    }
-
-    // Wait a brief moment for the restore effect to complete
-    const timer = setTimeout(() => {
-      if (!hydratedRef.current) {
-        // Still loading, wait longer
-        return;
-      }
-
-      // If records are still empty after hydration, initialize with one record
-      setProjectState((prev) => {
-        if (prev.records.length === 0) {
-          console.log("[AtterbergTest] Initializing new project with one empty record");
-          return {
-            ...prev,
-            records: [createRecord(0)],
-          };
-        }
-        return prev;
-      });
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [project.currentProjectId]);
 
   const { totalDataPoints, totalStartedDataPoints, aggregateResults, aggregateProjectResults, status, totalCompletedTests } = useMemo(() => {
     const totalPoints = computedRecords.reduce((sum, record) => sum + record.dataPoints, 0);
@@ -1727,6 +1594,25 @@ const AtterbergTest = () => {
         lastSaveError={lastSaveError}
       >
       <div className="space-y-4 print:space-y-3">
+        {project.onProjectNameChange && project.onClientNameChange && project.onLoadProject && project.onStartNewProject && project.onMetadataChange ? (
+          <Card className="border shadow-sm print:hidden">
+            <CardContent className="p-4">
+              <ProjectHeader
+                projectName={project.projectName}
+                clientName={project.clientName}
+                date={project.date}
+                projectHistory={project.projectHistory ?? []}
+                isLoadingProjects={project.isLoadingProjects ?? false}
+                projectMetadata={project.projectMetadata ?? {}}
+                onProjectNameChange={project.onProjectNameChange}
+                onClientNameChange={project.onClientNameChange}
+                onLoadProject={project.onLoadProject}
+                onStartNewProject={project.onStartNewProject}
+                onMetadataChange={project.onMetadataChange}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
         <Card className="border bg-muted/20 shadow-none print:border-border print:bg-transparent">
           <CardContent className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             <OverviewMetric label="Project" value={project.projectName || "Current project"} />

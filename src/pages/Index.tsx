@@ -34,7 +34,7 @@ import {
 import Dashboard from "@/pages/Dashboard";
 import Reports from "@/pages/Reports";
 import Admin from "@/pages/Admin";
-import ProjectHeader from "@/components/ProjectHeader";
+
 import Navigation from "@/components/Navigation";
 import { fetchCurrentUser, loginUser, logoutUser, type ApiUser, listRecords, debugAuthState } from "@/lib/api";
 import { registerAllTests } from "@/lib/testRegistration";
@@ -59,33 +59,7 @@ type AuthStatus = "checking" | "authenticated" | "unauthenticated";
 type TestCategory = "soil" | "concrete" | "rock" | "special";
 
 // Component to render tests dynamically from registry
-const TestsView = ({
-  initialTab,
-  projectName,
-  clientName,
-  date,
-  projectHistory,
-  isLoadingProjects,
-  projectMetadata,
-  onProjectNameChange,
-  onClientNameChange,
-  onLoadProject,
-  onStartNewProject,
-  onMetadataChange,
-}: {
-  initialTab?: string;
-  projectName: string;
-  clientName: string;
-  date: string;
-  projectHistory: ApiProjectRow[];
-  isLoadingProjects: boolean;
-  projectMetadata: any;
-  onProjectNameChange: (value: string) => void;
-  onClientNameChange: (value: string) => void;
-  onLoadProject: (projectId: string) => void;
-  onStartNewProject: () => void;
-  onMetadataChange: (key: string, value: string) => void;
-}) => {
+const TestsView = ({ initialTab }: { initialTab?: string }) => {
   const testData = useTestData();
 
   // Group tests by category
@@ -147,20 +121,6 @@ const TestsView = ({
 
   return (
     <div className="space-y-6">
-      <ProjectHeader
-        projectName={projectName}
-        clientName={clientName}
-        date={date}
-        projectHistory={projectHistory}
-        isLoadingProjects={isLoadingProjects}
-        projectMetadata={projectMetadata}
-        onProjectNameChange={onProjectNameChange}
-        onClientNameChange={onClientNameChange}
-        onLoadProject={onLoadProject}
-        onStartNewProject={onStartNewProject}
-        onMetadataChange={onMetadataChange}
-      />
-
       <Tabs defaultValue={initialTab || "soil"} className="w-full">
         <TabsList className="w-full grid grid-cols-4 mb-6 h-11">
           <TabsTrigger value="soil" className="gap-1.5 text-sm">
@@ -209,7 +169,6 @@ const Index = ({ initialTab }: IndexProps) => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const today = new Date().toISOString().split("T")[0];
 
-  const projectCtx = useMemo(() => ({ projectName, clientName, date: today, currentProjectId, projectDate }), [projectName, clientName, today, currentProjectId, projectDate]);
   const isAuthenticated = authStatus === "authenticated";
 
   // Expose debug function to window for console access
@@ -434,6 +393,28 @@ const Index = ({ initialTab }: IndexProps) => {
       setAuthStatus("unauthenticated");
     }
   };
+
+  const projectCtx = useMemo(
+    () => ({
+      projectName,
+      clientName,
+      date: today,
+      currentProjectId,
+      projectDate,
+      labOrganization: testData.projectMetadata.labOrganization,
+      dateReported: testData.projectMetadata.dateReported,
+      checkedBy: testData.projectMetadata.checkedBy,
+      projectHistory,
+      isLoadingProjects,
+      projectMetadata: testData.projectMetadata,
+      onProjectNameChange: handleProjectNameChange,
+      onClientNameChange: handleClientNameChange,
+      onLoadProject: handleLoadProject,
+      onStartNewProject: handleStartNewProject,
+      onMetadataChange: handleMetadataChange,
+    }),
+    [projectName, clientName, today, currentProjectId, projectDate, testData.projectMetadata, projectHistory, isLoadingProjects],
+  );
 
   return (
     <ProjectContext.Provider value={projectCtx}>
@@ -660,20 +641,7 @@ const Index = ({ initialTab }: IndexProps) => {
           ) : view === "admin" ? (
             <Admin />
           ) : (
-            <TestsView
-              initialTab={initialTab}
-              projectName={projectName}
-              clientName={clientName}
-              date={today}
-              projectHistory={projectHistory}
-              isLoadingProjects={isLoadingProjects}
-              projectMetadata={testData.projectMetadata}
-              onProjectNameChange={handleProjectNameChange}
-              onClientNameChange={handleClientNameChange}
-              onLoadProject={handleLoadProject}
-              onStartNewProject={handleStartNewProject}
-              onMetadataChange={handleMetadataChange}
-            />
+            <TestsView initialTab={initialTab} />
           )}
             </div>
         </main>
