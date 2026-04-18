@@ -1,59 +1,50 @@
 
 
-## Problem
+## Plan: Clean Slate for New Projects + Move Project Header Into Sections
 
-The screenshot shows a fully expanded record with LL (49.84%) + PL (3 trials) — this is **previously saved data** being restored from `localStorage` (`atterbergProjectState`) and/or the API. Our previous changes only affected newly created records/tests, so existing saved state still has `isExpanded: true` for both records and tests.
+Four user-visible changes, all in the Atterberg flow.
 
-## Fix
+### 1. New project = no overview stats showing data (image 1)
 
-Normalize hydrated state on load so the user always lands with a clean, collapsed view, while preserving all underlying trial data.
+The Project Metadata overview (Records: 1, Completed Tests: 3, Avg PI: 3.73%, Status: Completed) shows non-zero numbers because a record + tests are auto-created. Once we stop auto-creating records (#2) and tests (#3), these tiles naturally show `0` / `-`. No code change to the tile component itself — they're already derived from `computedRecords`.
 
-### Changes to `src/components/soil/AtterbergTest.tsx`
+### 2. New project = no default record card (image 2)
 
-**1. Add a small helper near `createRecord` (~line 237):**
+**File:** `src/components/soil/AtterbergTest.tsx`
 
-```ts
-const collapseAllOnLoad = (state: AtterbergProjectState): AtterbergProjectState => ({
-  ...state,
-  records: state.records.map((record) => ({
-    ...record,
-    isExpanded: false,
-    tests: record.tests.map((test) => ({ ...test, isExpanded: false })),
-  })),
-});
-```
+- **Initial state (line 680-682):** change initial state to always `{ records: [] }` — drop the `project.currentProjectId ? [createRecord(0)] : []` branch.
+- **Auto-init effect (lines 803-830):** delete the entire `useEffect` block that calls `setProjectState(... [createRecord(0)])` when no records exist after hydration. Records should only be created when the user clicks **Add Record**.
+- The empty state UI at lines 1804-1807 ("No records yet. Add a record to begin…") already handles this gracefully.
 
-**2. Apply it in the API hydration branch (~line 733-738):**
+### 3. New record = no Plastic Limit / Linear Shrinkage tests by default (image 3)
 
-```ts
-if (remoteState) {
-  skipNextPersistRef.current = true;
-  setProjectState(collapseAllOnLoad(remoteState));
-  hydratedRef.current = true;
-  return;
-}
-```
+`createRecord` (line 229-237) already returns `tests: []`. The pre-filled "Plastic Limit 1" + "Linear Shrinkage 1" cards in image 3 come from saved state from prior sessions where defaults were seeded.
 
-**3. Apply it in the localStorage hydration branch (~line 748-752):**
+**File:** `src/components/soil/AtterbergTest.tsx`
 
-```ts
-const parsed = normalizeAtterbergProjectState(JSON.parse(saved));
-if (parsed) {
-  skipNextPersistRef.current = true;
-  setProjectState(collapseAllOnLoad(parsed));
-}
-```
+- **Remove `createDefaultRecord`** (lines 249-368) entirely — confirms no path can seed default tests.
+- **Hydration cleanup:** in `collapseAllOnLoad` (line 239), if a hydrated record's tests list contains tests with **zero entered data** (no started trials), drop them. This wipes the pre-seeded Plastic Limit / Linear Shrinkage cards from previously-saved state on next load, while preserving any test where the user has actually typed values. Use existing `isLiquidLimitTrialStarted`, `isPlasticLimitTrialStarted`, `isShrinkageLimitTrialStarted` helpers (already imported in `AtterbergTestCard`; we'll import them here too from `@/lib/atterbergCalculations`).
+- After this filter, if a record ends up with `tests: []`, that's fine — the user adds tests via the dropdown.
 
-### Why this works
+### 4. Move "Project Name / Client Name / Date / History" inside the test section (image 4)
 
-- Underlying trial values are untouched — the user keeps all their saved data.
-- Every page entry now starts with **only Project Details visible**, all records collapsed, all tests inside collapsed.
-- The new sequential expansion logic (already in place from the prior change) takes over the moment the user expands a record and adds/selects tests.
-- No need to clear localStorage manually; the next save will rewrite the persisted state with `isExpanded: false` everywhere.
+**Files:**
+- `src/pages/Index.tsx` — remove the `<ProjectHeader … />` render at lines 150-162 from above the tabs.
+- `src/components/soil/AtterbergTest.tsx` — render `<ProjectHeader>` at the top of the children passed to `<TestSection>` (just before the overview metrics card at line 1730). Wire its props from the `useProject()` context plus existing handlers exposed via context or new lightweight ones.
+
+Because `<TestSection>` only renders children when its accordion is `open` (line 236 in `TestSection.tsx`), the project header will automatically appear only when **Atterberg Limits Testing** is expanded — exactly the behaviour requested.
+
+Props plumbing for `ProjectHeader`:
+- `projectName`, `clientName`, `date` come from `useProject()`.
+- `projectHistory`, `isLoadingProjects`, `projectMetadata`, `onProjectNameChange`, `onClientNameChange`, `onLoadProject`, `onStartNewProject`, `onMetadataChange` are currently held in `Index.tsx` state. Lift them into the existing `ProjectContext` (extend the context value to include these handlers + history list) and consume them inside `AtterbergTest`. This keeps `Index.tsx` as the single source of truth for project state while letting individual test sections render the header.
+
+Other test sections (Concrete, Rock, Special) keep working unchanged since the header is no longer at the page level — but per the user's request it only needs to live inside Atterberg ("when atterberg test is expanded"). If the user later wants it inside other sections too, we add the same one-liner there.
 
 ### Files modified
 
-- `src/components/soil/AtterbergTest.tsx` (one helper + two one-line wraps in the hydration effect)
+1. `src/components/soil/AtterbergTest.tsx` — empty initial state, remove auto-init effect, remove `createDefaultRecord`, prune empty saved tests on load, render `<ProjectHeader>` inside the section.
+2. `src/pages/Index.tsx` — stop rendering `<ProjectHeader>` above the tabs; pass its state/handlers via context.
+3. `src/context/ProjectContext.tsx` — extend context with project history, metadata, and the change/load/new-project/metadata handlers.
 
-No API, calculation, or schema changes.
+No backend, schema, calculation, or export-layout changes.
 
