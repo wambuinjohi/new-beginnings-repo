@@ -59,33 +59,7 @@ type AuthStatus = "checking" | "authenticated" | "unauthenticated";
 type TestCategory = "soil" | "concrete" | "rock" | "special";
 
 // Component to render tests dynamically from registry
-const TestsView = ({
-  initialTab,
-  projectName,
-  clientName,
-  date,
-  projectHistory,
-  isLoadingProjects,
-  projectMetadata,
-  onProjectNameChange,
-  onClientNameChange,
-  onLoadProject,
-  onStartNewProject,
-  onMetadataChange,
-}: {
-  initialTab?: string;
-  projectName: string;
-  clientName: string;
-  date: string;
-  projectHistory: ApiProjectRow[];
-  isLoadingProjects: boolean;
-  projectMetadata: any;
-  onProjectNameChange: (value: string) => void;
-  onClientNameChange: (value: string) => void;
-  onLoadProject: (projectId: string) => void;
-  onStartNewProject: () => void;
-  onMetadataChange: (key: string, value: string) => void;
-}) => {
+const TestsView = ({ initialTab }: { initialTab?: string }) => {
   const testData = useTestData();
 
   // Group tests by category
