@@ -394,6 +394,28 @@ const Index = ({ initialTab }: IndexProps) => {
     }
   };
 
+  const projectCtx = useMemo(
+    () => ({
+      projectName,
+      clientName,
+      date: today,
+      currentProjectId,
+      projectDate,
+      labOrganization: testData.projectMetadata.labOrganization,
+      dateReported: testData.projectMetadata.dateReported,
+      checkedBy: testData.projectMetadata.checkedBy,
+      projectHistory,
+      isLoadingProjects,
+      projectMetadata: testData.projectMetadata,
+      onProjectNameChange: handleProjectNameChange,
+      onClientNameChange: handleClientNameChange,
+      onLoadProject: handleLoadProject,
+      onStartNewProject: handleStartNewProject,
+      onMetadataChange: handleMetadataChange,
+    }),
+    [projectName, clientName, today, currentProjectId, projectDate, testData.projectMetadata, projectHistory, isLoadingProjects],
+  );
+
   return (
     <ProjectContext.Provider value={projectCtx}>
       <div className="min-h-screen bg-background flex flex-col">
@@ -619,20 +641,7 @@ const Index = ({ initialTab }: IndexProps) => {
           ) : view === "admin" ? (
             <Admin />
           ) : (
-            <TestsView
-              initialTab={initialTab}
-              projectName={projectName}
-              clientName={clientName}
-              date={today}
-              projectHistory={projectHistory}
-              isLoadingProjects={isLoadingProjects}
-              projectMetadata={testData.projectMetadata}
-              onProjectNameChange={handleProjectNameChange}
-              onClientNameChange={handleClientNameChange}
-              onLoadProject={handleLoadProject}
-              onStartNewProject={handleStartNewProject}
-              onMetadataChange={handleMetadataChange}
-            />
+            <TestsView initialTab={initialTab} />
           )}
             </div>
         </main>
