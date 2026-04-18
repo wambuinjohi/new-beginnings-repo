@@ -169,7 +169,6 @@ const Index = ({ initialTab }: IndexProps) => {
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const today = new Date().toISOString().split("T")[0];
 
-  const projectCtx = useMemo(() => ({ projectName, clientName, date: today, currentProjectId, projectDate }), [projectName, clientName, today, currentProjectId, projectDate]);
   const isAuthenticated = authStatus === "authenticated";
 
   // Expose debug function to window for console access
