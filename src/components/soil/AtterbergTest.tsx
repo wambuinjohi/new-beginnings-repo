@@ -4,7 +4,7 @@ import { ChevronDown, ChevronRight, Download, Plus, Trash2, Upload, AlertTriangl
 import { toast } from "sonner";
 
 import TestSection from "@/components/TestSection";
-import ProjectHeader from "@/components/ProjectHeader";
+
 import AtterbergTestCard from "./AtterbergTestCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -1594,25 +1594,6 @@ const AtterbergTest = () => {
         lastSaveError={lastSaveError}
       >
       <div className="space-y-4 print:space-y-3">
-        {project.onProjectNameChange && project.onClientNameChange && project.onLoadProject && project.onStartNewProject && project.onMetadataChange ? (
-          <Card className="border shadow-sm print:hidden">
-            <CardContent className="p-4">
-              <ProjectHeader
-                projectName={project.projectName}
-                clientName={project.clientName}
-                date={project.date}
-                projectHistory={project.projectHistory ?? []}
-                isLoadingProjects={project.isLoadingProjects ?? false}
-                projectMetadata={project.projectMetadata ?? {}}
-                onProjectNameChange={project.onProjectNameChange}
-                onClientNameChange={project.onClientNameChange}
-                onLoadProject={project.onLoadProject}
-                onStartNewProject={project.onStartNewProject}
-                onMetadataChange={project.onMetadataChange}
-              />
-            </CardContent>
-          </Card>
-        ) : null}
         <Card className="border bg-muted/20 shadow-none print:border-border print:bg-transparent">
           <CardContent className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             <OverviewMetric label="Project" value={project.projectName || "Current project"} />
