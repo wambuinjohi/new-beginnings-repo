@@ -335,8 +335,8 @@ const loadAtterbergProjectFromApi = async (lookup: AtterbergProjectLookup, proje
     }
 
     if (!hasLookupCriteria(lookup)) {
-      const latestResult = resultsResponse.data.find((row) => row.test_key === "atterberg" && row.payload_json);
-      return latestResult ? normalizeAtterbergProjectState(extractAtterbergPayload(latestResult.payload_json)) : null;
+      // No project lookup criteria — do not auto-load latest saved project (would leak stale data into a new project)
+      return null;
     }
 
     const projectRow = projectsResponse.data.find((row) => matchesProjectLookup(row, lookup));
@@ -631,6 +631,16 @@ const AtterbergTest = () => {
     let cancelled = false;
 
     const restoreProject = async () => {
+      // One-shot new-project flag set by Index.handleStartNewProject before reload.
+      // When present, skip all hydration and start with a clean empty state.
+      if (typeof sessionStorage !== "undefined" && sessionStorage.getItem("atterberg.newProject")) {
+        sessionStorage.removeItem("atterberg.newProject");
+        skipNextPersistRef.current = true;
+        setProjectState({ records: [] });
+        hydratedRef.current = true;
+        return;
+      }
+
       try {
         const remoteState = await loadAtterbergProjectFromApi(effectiveProjectLookup, project.currentProjectId);
         if (cancelled) return;
@@ -687,6 +697,13 @@ const AtterbergTest = () => {
       hydratedRef.current = false;
       lastLoadedLookupRef.current = null;
       skipNextPersistRef.current = true;
+      // Defensive: clear any persisted state so the next persist effect doesn't resurrect stale data
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem("enhancedAtterbergTests");
+      } catch {
+        // ignore storage errors
+      }
     };
 
     window.addEventListener("resetProject", handleResetProject);
