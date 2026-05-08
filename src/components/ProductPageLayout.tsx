@@ -30,15 +30,15 @@ export const ProductPageLayout = ({ title, description, children, faqs }: Produc
         })),
       };
 
-      let faqScript = document.querySelector('script[data-faq]');
-      if (faqScript) {
-        faqScript.textContent = JSON.stringify(faqSchema);
+      const existingFaq = document.querySelector<HTMLScriptElement>('script[data-faq]');
+      if (existingFaq) {
+        existingFaq.textContent = JSON.stringify(faqSchema);
       } else {
-        faqScript = document.createElement("script");
-        faqScript.type = "application/ld+json";
-        faqScript.setAttribute("data-faq", "true");
-        faqScript.textContent = JSON.stringify(faqSchema);
-        document.head.appendChild(faqScript);
+        const newScript = document.createElement("script");
+        newScript.type = "application/ld+json";
+        newScript.setAttribute("data-faq", "true");
+        newScript.textContent = JSON.stringify(faqSchema);
+        document.head.appendChild(newScript);
       }
     }
   }, [faqs]);

@@ -55,15 +55,15 @@ export const Partners = () => {
       })),
     };
 
-    let partnersScript = document.querySelector("script[data-partners-schema]");
+    const partnersScript = document.querySelector<HTMLScriptElement>("script[data-partners-schema]");
     if (partnersScript) {
       partnersScript.textContent = JSON.stringify(partnersOrgSchema);
     } else {
-      partnersScript = document.createElement("script");
-      partnersScript.type = "application/ld+json";
-      partnersScript.setAttribute("data-partners-schema", "true");
-      partnersScript.textContent = JSON.stringify(partnersOrgSchema);
-      document.head.appendChild(partnersScript);
+      const newScript = document.createElement("script");
+      newScript.type = "application/ld+json";
+      newScript.setAttribute("data-partners-schema", "true");
+      newScript.textContent = JSON.stringify(partnersOrgSchema);
+      document.head.appendChild(newScript);
     }
   }, []);
   const featuredPartner = partners.find(p => p.featured);
