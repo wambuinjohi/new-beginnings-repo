@@ -24,6 +24,8 @@ import EquipmentQualityControl from "./pages/products/EquipmentQualityControl";
 import Filtration from "./pages/products/Filtration";
 import LaboratoryMaterialTesting from "./pages/products/LaboratoryMaterialTesting";
 import ProductDetail from "./pages/products/ProductDetail";
+import HachInstruments from "./pages/products/HachInstruments";
+import HachProductDetail from "./pages/products/HachProductDetail";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import { LeadsManager } from "@/components/admin/LeadsManager";
@@ -64,6 +66,8 @@ const AppRoutes = () => {
         <Route path="/products/laboratory-material-testing" element={<LaboratoryMaterialTesting />} />
         <Route path="/products/automobile-supplies" element={<AutomobileSupplies />} />
         <Route path="/products/automobile-supplies/:productId" element={<ProductDetail />} />
+        <Route path="/products/hach-instruments" element={<HachInstruments />} />
+        <Route path="/products/hach-instruments/:productId" element={<HachProductDetail />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
