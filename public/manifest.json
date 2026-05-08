@@ -1,0 +1,72 @@
+{
+  "name": "Moris Enterprises - Laboratory Equipment & Chemicals",
+  "short_name": "Moris Enterprises",
+  "description": "Leading supplier of laboratory chemicals, medical instruments, and biotechnology equipment in Kenya",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#20b2aa",
+  "icons": [
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/src/assets/logo.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "categories": ["business", "medical"],
+  "shortcuts": [
+    {
+      "name": "Medical Equipment",
+      "short_name": "Medical",
+      "description": "Browse medical equipment products",
+      "url": "/products/medical-equipment",
+      "icons": [{ "src": "/src/assets/logo.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Laboratory Chemicals",
+      "short_name": "Chemicals",
+      "description": "Browse laboratory chemicals and reagents",
+      "url": "/products/laboratory-chemicals",
+      "icons": [{ "src": "/src/assets/logo.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

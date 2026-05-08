@@ -1,0 +1,32 @@
+# Robots.txt for Moris Enterprises
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /.env
+Disallow: /private/
+Disallow: */private/*
+
+# Specific rules for search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Crawl-delay to be respectful
+Crawl-delay: 1
+
+# Sitemaps
+Sitemap: https://morisenterprises.com/sitemap.xml
+
+# Block bad bots
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
