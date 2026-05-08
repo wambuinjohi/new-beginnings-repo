@@ -60,15 +60,15 @@ const ProductDetail = () => {
   // Add schema to head
   React.useEffect(() => {
     if (!productSchema) return;
-    let productScript = document.querySelector('script[data-product-schema]');
-    if (productScript) {
-      productScript.textContent = JSON.stringify(productSchema);
+    const existing = document.querySelector<HTMLScriptElement>('script[data-product-schema]');
+    if (existing) {
+      existing.textContent = JSON.stringify(productSchema);
     } else {
-      productScript = document.createElement("script");
-      productScript.type = "application/ld+json";
-      productScript.setAttribute("data-product-schema", "true");
-      productScript.textContent = JSON.stringify(productSchema);
-      document.head.appendChild(productScript);
+      const newScript = document.createElement("script");
+      newScript.type = "application/ld+json";
+      newScript.setAttribute("data-product-schema", "true");
+      newScript.textContent = JSON.stringify(productSchema);
+      document.head.appendChild(newScript);
     }
   }, [product?.id, productSchema]);
 

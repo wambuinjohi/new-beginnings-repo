@@ -39,15 +39,15 @@ export const Contact = () => {
       },
     };
 
-    let contactScript = document.querySelector('script[data-contact-schema]');
+    let contactScript = document.querySelector<HTMLScriptElement>('script[data-contact-schema]');
     if (contactScript) {
       contactScript.textContent = JSON.stringify(contactSchema);
     } else {
-      contactScript = document.createElement("script");
-      contactScript.type = "application/ld+json";
-      contactScript.setAttribute("data-contact-schema", "true");
-      contactScript.textContent = JSON.stringify(contactSchema);
-      document.head.appendChild(contactScript);
+      const newScript = document.createElement("script");
+      newScript.type = "application/ld+json";
+      newScript.setAttribute("data-contact-schema", "true");
+      newScript.textContent = JSON.stringify(contactSchema);
+      document.head.appendChild(newScript);
     }
 
     return () => {

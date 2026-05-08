@@ -135,20 +135,20 @@ export const usePageMeta = ({
         })),
       };
 
-      let breadcrumbScript = document.querySelector('script[data-breadcrumb]');
+      const breadcrumbScript = document.querySelector<HTMLScriptElement>('script[data-breadcrumb]');
       if (breadcrumbScript) {
         breadcrumbScript.textContent = JSON.stringify(breadcrumbSchema);
       } else {
-        breadcrumbScript = document.createElement("script");
-        breadcrumbScript.type = "application/ld+json";
-        breadcrumbScript.setAttribute("data-breadcrumb", "true");
-        breadcrumbScript.textContent = JSON.stringify(breadcrumbSchema);
-        document.head.appendChild(breadcrumbScript);
+        const newScript = document.createElement("script");
+        newScript.type = "application/ld+json";
+        newScript.setAttribute("data-breadcrumb", "true");
+        newScript.textContent = JSON.stringify(breadcrumbSchema);
+        document.head.appendChild(newScript);
       }
     }
 
     // Add article/product metadata schema
-    if (type === "article" && (publishedDate || author || modifiedDate)) {
+    if ((type === "article" || type === "product") && (publishedDate || author || modifiedDate)) {
       const articleSchema = {
         "@context": "https://schema.org",
         "@type": type === "product" ? "Product" : "Article",
@@ -160,15 +160,15 @@ export const usePageMeta = ({
         ...(author && { author: { "@type": "Organization", name: author } }),
       };
 
-      let articleScript = document.querySelector('script[data-article]');
+      const articleScript = document.querySelector<HTMLScriptElement>('script[data-article]');
       if (articleScript) {
         articleScript.textContent = JSON.stringify(articleSchema);
       } else {
-        articleScript = document.createElement("script");
-        articleScript.type = "application/ld+json";
-        articleScript.setAttribute("data-article", "true");
-        articleScript.textContent = JSON.stringify(articleSchema);
-        document.head.appendChild(articleScript);
+        const newScript = document.createElement("script");
+        newScript.type = "application/ld+json";
+        newScript.setAttribute("data-article", "true");
+        newScript.textContent = JSON.stringify(articleSchema);
+        document.head.appendChild(newScript);
       }
     }
 
@@ -187,15 +187,15 @@ export const usePageMeta = ({
         })),
       };
 
-      let faqScript = document.querySelector('script[data-faq-meta]');
+      const faqScript = document.querySelector<HTMLScriptElement>('script[data-faq-meta]');
       if (faqScript) {
         faqScript.textContent = JSON.stringify(faqSchema);
       } else {
-        faqScript = document.createElement("script");
-        faqScript.type = "application/ld+json";
-        faqScript.setAttribute("data-faq-meta", "true");
-        faqScript.textContent = JSON.stringify(faqSchema);
-        document.head.appendChild(faqScript);
+        const newScript = document.createElement("script");
+        newScript.type = "application/ld+json";
+        newScript.setAttribute("data-faq-meta", "true");
+        newScript.textContent = JSON.stringify(faqSchema);
+        document.head.appendChild(newScript);
       }
     }
 
