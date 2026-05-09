@@ -40,7 +40,7 @@ export function LeadsManager() {
   const { token } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -53,7 +53,7 @@ export function LeadsManager() {
     try {
       setLoading(true);
       let url = `${API_BASE_URL}/leads?limit=100`;
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== 'all') {
         url += `&status=${statusFilter}`;
       }
 
@@ -126,7 +126,7 @@ export function LeadsManager() {
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Statuses</SelectItem>
+                    <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="new">New</SelectItem>
                     <SelectItem value="contacted">Contacted</SelectItem>
                     <SelectItem value="qualified">Qualified</SelectItem>
