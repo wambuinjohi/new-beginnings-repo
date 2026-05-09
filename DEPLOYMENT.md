@@ -265,3 +265,14 @@ For deployment issues:
 2. Verify all prerequisites
 3. Test locally first
 4. Contact hosting provider if needed
+
+## Email Drip Cron
+
+Day-0/2/7 lead drip (Day-0 sends inline; cron handles Day-2 and Day-7):
+
+```cron
+*/5 * * * * /usr/bin/php /var/www/html/public/cron/process-drip.php >> /var/log/moris-drip.log 2>&1
+*/2 * * * * /usr/bin/php -r "require '/var/www/html/public/EmailService.php'; (new EmailService())->processQueue(20);" >> /var/log/moris-queue.log 2>&1
+```
+
+Templates live in `public/email-templates/drip-day0.html|day2.html|day7.html` and use `{{name}}` and `{{product_interest}}`.
