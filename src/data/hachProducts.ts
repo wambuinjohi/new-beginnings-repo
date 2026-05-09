@@ -1,4 +1,13 @@
 // HACH Instruments product catalog with SEO metadata
+import imgDR3900 from "@/assets/hach/hach-dr3900-vis-spectrophotometer.jpg";
+import imgDR6000 from "@/assets/hach/hach-dr6000-uv-vis-spectrophotometer.jpg";
+import imgDR1900 from "@/assets/hach/hach-dr1900-portable-spectrophotometer.jpg";
+import imgDR1010 from "@/assets/hach/hach-dr1010-cod-rapid.jpg";
+import imgHT200S from "@/assets/hach/hach-ht200s-cod-digester.jpg";
+import imgDRB200 from "@/assets/hach/hach-drb200-heating-digester.jpg";
+import imgDR300ClO2 from "@/assets/hach/hach-dr300-chlorine-dioxide.jpg";
+import imgDR300O3 from "@/assets/hach/hach-dr300-ozone.jpg";
+
 export interface HachProduct {
   id: string;
   name: string;
@@ -32,7 +41,16 @@ export const hachSubCategories = [
   { slug: "other", label: "Other Testing" },
 ];
 
-const PLACEHOLDER = "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=800&q=80";
+const PRODUCT_IMAGES: Record<string, string> = {
+  "hach-dr3900-vis-spectrophotometer": imgDR3900,
+  "hach-dr6000-uv-vis-spectrophotometer": imgDR6000,
+  "hach-dr1900-portable-spectrophotometer": imgDR1900,
+  "hach-dr1010-cod-rapid": imgDR1010,
+  "hach-ht200s-cod-digester": imgHT200S,
+  "hach-drb200-heating-digester": imgDRB200,
+  "hach-dr300-chlorine-dioxide": imgDR300ClO2,
+  "hach-dr300-ozone": imgDR300O3,
+};
 
 export const hachProducts: HachProduct[] = [
   {
