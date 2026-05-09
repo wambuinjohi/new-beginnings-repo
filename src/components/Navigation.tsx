@@ -38,6 +38,7 @@ export const Navigation = () => {
   };
 
   const productCategories = [
+    { name: "HACH Instruments", path: "/products/hach-instruments", icon: Microscope },
     { name: "Medical Equipment", path: "/products/medical-equipment", icon: HeartPulse },
     { name: "Microbiology and Biotechnology", path: "/products/microbiology-biotechnology", icon: Microscope },
     { name: "Glassware", path: "/products/glassware", icon: Beaker },
