@@ -3,11 +3,64 @@
  * Lead Handler
  */
 
+require_once __DIR__ . '/EmailService.php';
+
 class LeadHandler {
     private $db;
+    private $emailService;
 
     public function __construct() {
         $this->db = Database::getInstance();
+        $this->emailService = new EmailService();
+    }
+
+    /**
+     * Render an HTML drip template from public/email-templates with variables.
+     */
+    private function renderDripTemplate($file, $vars) {
+        $path = __DIR__ . '/email-templates/' . $file;
+        if (!file_exists($path)) return null;
+        $body = file_get_contents($path);
+        return $this->emailService->renderTemplate($body, $vars);
+    }
+
+    /**
+     * Enroll a new lead in the Day-0/2/7 drip.
+     * Sends Day-0 immediately via the email queue, schedules Day-2 + Day-7.
+     */
+    private function enrollInDrip($lead_id, $name, $email, $product_interest) {
+        $product = $product_interest ?: 'our products';
+        $vars = ['name' => $name ?: 'there', 'product_interest' => $product];
+
+        $body = $this->renderDripTemplate('drip-day0.html', $vars);
+        if ($body) {
+            $token = bin2hex(random_bytes(16));
+            $this->emailService->sendCampaignEmail(
+                $email,
+                'Thanks for reaching out — Moris One Enterprises',
+                $body,
+                null,
+                $lead_id,
+                $token
+            );
+            try {
+                $this->db->execute(
+                    'INSERT IGNORE INTO lead_drip_schedule (lead_id, step, scheduled_at, status, sent_at)
+                     VALUES (?, ?, NOW(), ?, NOW())',
+                    [$lead_id, 0, 'sent']
+                );
+            } catch (Exception $e) { /* ignore */ }
+        }
+
+        foreach ([2, 7] as $step) {
+            try {
+                $this->db->execute(
+                    'INSERT IGNORE INTO lead_drip_schedule (lead_id, step, scheduled_at, status)
+                     VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? DAY), ?)',
+                    [$lead_id, $step, $step, 'pending']
+                );
+            } catch (Exception $e) { /* ignore */ }
+        }
     }
 
     /**
@@ -57,6 +110,14 @@ class LeadHandler {
                 'INSERT INTO tracking_pixels (lead_id, page_url, utm_source) VALUES (?, ?, ?)',
                 [$id, $_SERVER['HTTP_REFERER'] ?? null, $source]
             );
+
+            // Day-0/2/7 automated email drip
+            try {
+                $this->enrollInDrip($id, $name, $email, $product_interest);
+            } catch (Exception $e) {
+                // Don't fail lead creation if drip enrollment fails
+                if (class_exists('Logger')) Logger::error('Drip enroll failed: ' . $e->getMessage());
+            }
 
             http_response_code(201);
             echo json_encode([

@@ -1,4 +1,13 @@
 // HACH Instruments product catalog with SEO metadata
+import imgDR3900 from "@/assets/hach/hach-dr3900-vis-spectrophotometer.jpg";
+import imgDR6000 from "@/assets/hach/hach-dr6000-uv-vis-spectrophotometer.jpg";
+import imgDR1900 from "@/assets/hach/hach-dr1900-portable-spectrophotometer.jpg";
+import imgDR1010 from "@/assets/hach/hach-dr1010-cod-rapid.jpg";
+import imgHT200S from "@/assets/hach/hach-ht200s-cod-digester.jpg";
+import imgDRB200 from "@/assets/hach/hach-drb200-heating-digester.jpg";
+import imgDR300ClO2 from "@/assets/hach/hach-dr300-chlorine-dioxide.jpg";
+import imgDR300O3 from "@/assets/hach/hach-dr300-ozone.jpg";
+
 export interface HachProduct {
   id: string;
   name: string;
@@ -32,7 +41,16 @@ export const hachSubCategories = [
   { slug: "other", label: "Other Testing" },
 ];
 
-const PLACEHOLDER = "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&w=800&q=80";
+const PRODUCT_IMAGES: Record<string, string> = {
+  "hach-dr3900-vis-spectrophotometer": imgDR3900,
+  "hach-dr6000-uv-vis-spectrophotometer": imgDR6000,
+  "hach-dr1900-portable-spectrophotometer": imgDR1900,
+  "hach-dr1010-cod-rapid": imgDR1010,
+  "hach-ht200s-cod-digester": imgHT200S,
+  "hach-drb200-heating-digester": imgDRB200,
+  "hach-dr300-chlorine-dioxide": imgDR300ClO2,
+  "hach-dr300-ozone": imgDR300O3,
+};
 
 export const hachProducts: HachProduct[] = [
   {
@@ -41,7 +59,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR3900 Laboratory VIS Spectrophotometer | Moris One Enterprises",
     description: "HACH DR3900 visible-light laboratory spectrophotometer for routine water-quality analysis. RFID-enabled, pre-programmed methods for COD, nutrients, metals and disinfection residue. Supplied and supported in Kenya by Moris One Enterprises.",
     shortDescription: "Benchtop visible-light spectrophotometer with 240+ pre-programmed water-quality methods.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr3900-vis-spectrophotometer"],
     imageAlt: "HACH DR3900 Laboratory VIS Spectrophotometer benchtop unit",
     keywords: "HACH DR3900, HACH spectrophotometer Kenya, water quality spectrophotometer, lab VIS spectrophotometer, COD analyzer Kenya",
     specifications: {
@@ -61,7 +79,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR6000 UV-Visible Spectrophotometer | Moris One Enterprises",
     description: "HACH DR6000 high-performance UV/VIS spectrophotometer for advanced laboratory water analysis. Supports user-defined methods, scanning and time-course measurements. Sourced and serviced by Moris One Enterprises in Kenya.",
     shortDescription: "Advanced UV/VIS benchtop spectrophotometer for research-grade water analysis.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr6000-uv-vis-spectrophotometer"],
     imageAlt: "HACH DR6000 UV-Visible Spectrophotometer",
     keywords: "HACH DR6000, UV VIS spectrophotometer Kenya, advanced water analysis, HACH lab instrument",
     specifications: {
@@ -81,7 +99,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR1900 Portable Spectrophotometer | Field Water Testing Kenya",
     description: "HACH DR1900 portable spectrophotometer for in-field water quality testing. Rugged, battery-powered design with 220+ pre-programmed methods. Ideal for remote site monitoring across Kenya.",
     shortDescription: "Rugged portable spectrophotometer engineered for field water-quality testing.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr1900-portable-spectrophotometer"],
     imageAlt: "HACH DR1900 Portable Spectrophotometer",
     keywords: "HACH DR1900, portable spectrophotometer Kenya, field water testing, portable HACH analyzer",
     specifications: {
@@ -101,7 +119,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR1010 COD Rapid Determination Instrument | Wastewater Testing Kenya",
     description: "HACH DR1010 dedicated COD analyzer for rapid chemical-oxygen-demand determination. Single-parameter design for high-throughput wastewater laboratories. Available in Kenya from Moris One Enterprises.",
     shortDescription: "Dedicated rapid-result COD analyzer for wastewater laboratories.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr1010-cod-rapid"],
     imageAlt: "HACH DR1010 COD Rapid Determination Instrument",
     keywords: "HACH DR1010, COD analyzer Kenya, rapid COD determination, wastewater COD instrument",
     specifications: {
@@ -121,7 +139,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH HT200S COD High-Temperature Digester | Moris One Enterprises",
     description: "HACH HT200S high-temperature COD digestion block. Reaches 165°C in minutes with pre-programmed digestion programs. Pairs with HACH spectrophotometers for full COD workflows.",
     shortDescription: "Compact high-temperature digestion block for COD sample preparation.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-ht200s-cod-digester"],
     imageAlt: "HACH HT200S COD High-Temperature Dissolver",
     keywords: "HACH HT200S, COD digester Kenya, high temperature dissolver, sample digestion HACH",
     specifications: {
@@ -141,7 +159,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DRB200 Heating Digester | COD & Nutrient Sample Prep Kenya",
     description: "HACH DRB200 heating digester for COD, total nitrogen and total phosphorus sample preparation. Selectable temperature programs and dual-block options. Supplied in Kenya by Moris One Enterprises.",
     shortDescription: "Versatile heating digester for COD, total nitrogen and total phosphorus prep.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-drb200-heating-digester"],
     imageAlt: "HACH DRB200 Heating Digester",
     keywords: "HACH DRB200, heating digester Kenya, COD digestion block, total nitrogen prep",
     specifications: {
@@ -161,7 +179,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR300 Chlorine Dioxide Pocket Colorimeter | Disinfection Residue Kenya",
     description: "HACH DR300 pocket colorimeter pre-configured for chlorine dioxide measurement. Compact, IP67-rated design ideal for water treatment plants and disinfection residue checks across Kenya.",
     shortDescription: "Pocket-sized chlorine dioxide colorimeter for in-field disinfection residue checks.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr300-chlorine-dioxide"],
     imageAlt: "HACH DR300 Chlorine Dioxide Pocket Colorimeter",
     keywords: "HACH DR300, pocket colorimeter Kenya, chlorine dioxide test, disinfection residue analyzer",
     specifications: {
@@ -181,7 +199,7 @@ export const hachProducts: HachProduct[] = [
     title: "HACH DR300 Pocket Ozone Colorimeter | Ozone Residue Testing Kenya",
     description: "HACH DR300 pocket colorimeter pre-configured for dissolved ozone measurement. Reliable, single-parameter device for water treatment plant operators. Available from Moris One Enterprises in Kenya.",
     shortDescription: "Pocket ozone colorimeter for fast dissolved-ozone residue verification.",
-    image: PLACEHOLDER,
+    image: PRODUCT_IMAGES["hach-dr300-ozone"],
     imageAlt: "HACH DR300 Pocket Ozone Colorimeter",
     keywords: "HACH DR300 ozone, pocket ozone colorimeter, ozone residue testing Kenya, water treatment ozone",
     specifications: {
