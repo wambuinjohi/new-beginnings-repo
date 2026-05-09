@@ -236,3 +236,22 @@ CREATE INDEX idx_leads_email_status ON leads(email, status);
 CREATE INDEX idx_customers_email_status ON customers(email, status);
 CREATE INDEX idx_tracking_lead_timestamp ON tracking_pixels(lead_id, timestamp);
 CREATE INDEX idx_campaign_recipients_campaign_status ON campaign_recipients(campaign_id, status);
+
+-- ============================================================================
+-- 10. LEAD_DRIP_SCHEDULE TABLE - Day-0/2/7 automated email drip
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS lead_drip_schedule (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  lead_id INT NOT NULL,
+  step TINYINT NOT NULL COMMENT '0 = welcome (sent immediately), 2 = day 2 follow-up, 7 = day 7 nudge',
+  scheduled_at DATETIME NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending' COMMENT 'pending, sent, skipped, failed',
+  sent_at DATETIME NULL,
+  attempts INT DEFAULT 0,
+  last_error VARCHAR(500) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE,
+  UNIQUE KEY uniq_lead_step (lead_id, step),
+  INDEX idx_status_scheduled (status, scheduled_at),
+  INDEX idx_lead_id (lead_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
