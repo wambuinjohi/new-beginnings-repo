@@ -111,6 +111,14 @@ class LeadHandler {
                 [$id, $_SERVER['HTTP_REFERER'] ?? null, $source]
             );
 
+            // Day-0/2/7 automated email drip
+            try {
+                $this->enrollInDrip($id, $name, $email, $product_interest);
+            } catch (Exception $e) {
+                // Don't fail lead creation if drip enrollment fails
+                if (class_exists('Logger')) Logger::error('Drip enroll failed: ' . $e->getMessage());
+            }
+
             http_response_code(201);
             echo json_encode([
                 'message' => 'Lead created successfully',
