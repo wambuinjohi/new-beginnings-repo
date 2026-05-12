@@ -3,11 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { FloatingWhatsAppButton } from "@/components/FloatingWhatsAppButton";
 import { useAnalyticsPageTracking } from "@/hooks/use-analytics";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import Services from "./pages/Services";
 import MedicalEquipment from "./pages/products/MedicalEquipment";
 import MicrobiologyBiotechnology from "./pages/products/MicrobiologyBiotechnology";
 import Glassware from "./pages/products/Glassware";
@@ -48,8 +52,12 @@ const AppRoutes = () => {
       <Toaster />
       <Sonner />
       <ScrollToTop />
+      <FloatingWhatsAppButton />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/products/medical-equipment" element={<MedicalEquipment />} />
         <Route path="/products/microbiology-biotechnology" element={<MicrobiologyBiotechnology />} />
         <Route path="/products/glassware" element={<Glassware />} />

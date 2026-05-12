@@ -3,6 +3,8 @@ import { Hero } from "@/components/Hero";
 import { About } from "@/components/About";
 import { Partners } from "@/components/Partners";
 import { Services } from "@/components/Services";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
+import { Testimonials } from "@/components/Testimonials";
 import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 import { usePageMeta } from "@/hooks/use-page-meta";
@@ -26,6 +28,8 @@ const Index = () => {
       <About />
       <Partners />
       <Services />
+      <WhyChooseUs />
+      <Testimonials />
       <Contact />
       <Footer />
     </div>

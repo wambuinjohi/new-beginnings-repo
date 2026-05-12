@@ -49,12 +49,14 @@ export const Footer = () => {
                 </button>
               </li>
               <li>
-                <button
-                  onClick={() => scrollToSection("services")}
-                  className="text-background/80 hover:text-background transition-colors"
-                >
+                <a href="/services" className="text-background/80 hover:text-background transition-colors">
                   Services
-                </button>
+                </a>
+              </li>
+              <li>
+                <a href="/blog" className="text-background/80 hover:text-background transition-colors">
+                  Blog
+                </a>
               </li>
               <li>
                 <button
