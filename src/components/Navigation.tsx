@@ -54,6 +54,7 @@ export const Navigation = () => {
   const navItems = [
     { label: "Home", action: () => scrollToSection("home") },
     { label: "About", action: () => scrollToSection("about") },
+    { label: "Blog", action: () => navigate("/blog") },
     { label: "Services", action: () => scrollToSection("services") },
     { label: "Automobile Supplies", action: () => navigate("/products/automobile-supplies") },
     { label: "Contact", action: () => scrollToSection("contact") },

@@ -130,11 +130,17 @@ export const Contact = () => {
     <section id="contact" className="py-24 bg-secondary/30" aria-label="Contact Us" role="region">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16 animate-fade-in">
+          <div className="inline-block bg-green-100 border border-green-300 rounded-full px-4 py-2 mb-6">
+            <span className="text-green-700 text-sm font-semibold">✓ 24-Hour Response Guarantee</span>
+          </div>
           <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
             Get Your Free Quote Today
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Place your enquiry online! Our sales resource will get to you within 24 hours. We value our customers.
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
+            Need laboratory chemicals or medical equipment? Fill out the form below or chat with us on WhatsApp for instant response.
+          </p>
+          <p className="text-sm text-green-700 font-semibold">
+            💬 Our team responds within 2 hours during business hours (Mon-Sat, 8AM-10PM)
           </p>
         </div>
 

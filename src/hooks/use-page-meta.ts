@@ -23,7 +23,119 @@ interface PageMetaProps {
   modifiedDate?: string;
   faqs?: FAQItem[];
   ogLocale?: string;
+  serviceArea?: string;
 }
+
+// Organization schema - global, mounted once
+const addOrganizationSchema = () => {
+  let script = document.querySelector<HTMLScriptElement>('script[data-org-schema]');
+  if (!script) {
+    const orgSchema = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "Moris Enterprises",
+      url: "https://morisenterprises.com",
+      logo: "https://morisenterprises.com/logo.png",
+      description: "Leading supplier of laboratory chemicals, medical equipment, and biotechnology supplies in Kenya",
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "Customer Support",
+        telephone: "+254733137332",
+        email: "info@morisentreprise.com",
+        areaServed: "KE",
+        availableLanguage: ["en", "sw"]
+      },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Juja road",
+        addressLocality: "Nairobi",
+        addressCountry: "KE"
+      },
+      foundingDate: "2010",
+      sameAs: [
+        "https://www.facebook.com/morisenterprise",
+        "https://www.linkedin.com/company/moris-enterprises"
+      ],
+      priceRange: "$$"
+    };
+
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-org-schema", "true");
+    script.textContent = JSON.stringify(orgSchema);
+    document.head.appendChild(script);
+  }
+};
+
+// LocalBusiness schema - for local SEO
+const addLocalBusinessSchema = () => {
+  let script = document.querySelector<HTMLScriptElement>('script[data-local-schema]');
+  if (!script) {
+    const localSchema = {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      name: "Moris Enterprises",
+      description: "Laboratory chemicals, medical equipment & biotechnology supplier",
+      url: "https://morisenterprises.com",
+      telephone: "+254733137332",
+      email: "info@morisentreprise.com",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Juja road",
+        addressLocality: "Nairobi",
+        postalCode: "00619",
+        addressCountry: "KE"
+      },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: "-1.2473",
+        longitude: "36.9945"
+      },
+      openingHoursSpecification: {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        opens: "08:00",
+        closes: "22:00"
+      },
+      areaServed: "KE",
+      serviceType: "Laboratory Supplies, Medical Equipment, Biotechnology Products"
+    };
+
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-local-schema", "true");
+    script.textContent = JSON.stringify(localSchema);
+    document.head.appendChild(script);
+  }
+};
+
+// Website schema with search action
+const addWebsiteSchema = () => {
+  let script = document.querySelector<HTMLScriptElement>('script[data-website-schema]');
+  if (!script) {
+    const websiteSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      url: "https://morisenterprises.com",
+      name: "Moris Enterprises",
+      description: "Leading supplier of laboratory chemicals, medical equipment, and biotechnology supplies",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: "https://morisenterprises.com/search?q={search_term_string}"
+        },
+        query_input: "required name=search_term_string"
+      }
+    };
+
+    script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-website-schema", "true");
+    script.textContent = JSON.stringify(websiteSchema);
+    document.head.appendChild(script);
+  }
+};
 
 export const usePageMeta = ({
   title,
@@ -38,8 +150,14 @@ export const usePageMeta = ({
   modifiedDate,
   faqs,
   ogLocale = "en_KE",
+  serviceArea,
 }: PageMetaProps) => {
   useEffect(() => {
+    // Add global schemas on mount
+    addOrganizationSchema();
+    addLocalBusinessSchema();
+    addWebsiteSchema();
+
     // Set document title
     document.title = title;
 
@@ -84,9 +202,12 @@ export const usePageMeta = ({
     updateOGTag("og:description", description);
     updateOGTag("og:type", type);
     updateOGTag("og:locale", ogLocale);
+    updateOGTag("og:site_name", "Moris Enterprises");
+    updateOGTag("og:url", canonical || "https://morisenterprises.com");
 
     if (image) {
       updateOGTag("og:image", image);
+      updateOGTag("og:image:alt", title);
     }
 
     // Update Twitter Card tags
@@ -102,8 +223,10 @@ export const usePageMeta = ({
       }
     };
 
+    updateTwitterTag("twitter:card", "summary_large_image");
     updateTwitterTag("twitter:title", title);
     updateTwitterTag("twitter:description", description);
+    updateTwitterTag("twitter:site", "@morisenterprises");
 
     if (image) {
       updateTwitterTag("twitter:image", image);
@@ -199,5 +322,5 @@ export const usePageMeta = ({
       }
     }
 
-  }, [title, description, keywords, image, type, canonical, breadcrumbs, author, publishedDate, modifiedDate, faqs, ogLocale]);
+  }, [title, description, keywords, image, type, canonical, breadcrumbs, author, publishedDate, modifiedDate, faqs, ogLocale, serviceArea]);
 };

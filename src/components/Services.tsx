@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import {
   Microscope,
   Beaker,
@@ -106,9 +108,14 @@ export const Services = () => {
           <h2 className="text-4xl md:text-5xl font-display font-bold text-foreground mb-4">
             Our Premium Products &amp; Services
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
             We help you with all the solutions you may require for the industry with prompt service at any point in time. Customer centricity is our motto.
           </p>
+          <Link to="/services">
+            <Button variant="outline">
+              View All Services <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </Link>
         </div>
 
         <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list">

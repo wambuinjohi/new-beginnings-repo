@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -60,6 +61,14 @@ export const ProductPageLayout = ({ title, description, children, faqs }: Produc
       {/* Hero Section */}
       <section className="pt-32 pb-16 bg-gradient-primary">
         <div className="container mx-auto px-4">
+          <Breadcrumbs
+            items={[
+              { label: "Home", path: "/" },
+              { label: "Services", path: "/services" },
+              { label: title }
+            ]}
+            className="mb-6 text-primary-foreground/80"
+          />
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
